@@ -57,6 +57,8 @@ import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
+import { createDefaultSwarmForm } from "./controllers/swarm.ts";
+import type { EnterpriseIdentityInput, SwarmTeamDefinition } from "./controllers/swarm.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
 import { loadSettings, type UiSettings } from "./storage.ts";
@@ -213,7 +215,7 @@ export class OpenClawApp extends LitElement {
   @state() agentsList: AgentsListResult | null = null;
   @state() agentsError: string | null = null;
   @state() agentsSelectedId: string | null = null;
-  @state() agentsPanel: "overview" | "files" | "tools" | "skills" | "channels" | "cron" =
+  @state() agentsPanel: "overview" | "files" | "memory" | "metrics" | "tools" | "skills" | "channels" | "cron" | "swarm" =
     "overview";
   @state() agentFilesLoading = false;
   @state() agentFilesError: string | null = null;
@@ -229,6 +231,18 @@ export class OpenClawApp extends LitElement {
   @state() agentSkillsError: string | null = null;
   @state() agentSkillsReport: SkillStatusReport | null = null;
   @state() agentSkillsAgentId: string | null = null;
+  @state() swarmLoading = false;
+  @state() swarmSaving = false;
+  @state() swarmError: string | null = null;
+  @state() swarmTeams: SwarmTeamDefinition[] = [];
+  @state() swarmSelectedTeamId: string | null = null;
+  @state() swarmForm = createDefaultSwarmForm();
+  @state() swarmIdentity: EnterpriseIdentityInput = {
+    tenantId: "default",
+    requesterId: "control-ui",
+    role: "admin",
+    scopes: "swarm:read, swarm:write",
+  };
 
   @state() sessionsLoading = false;
   @state() sessionsResult: SessionsListResult | null = null;

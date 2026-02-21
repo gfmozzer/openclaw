@@ -22,6 +22,7 @@ const {
   buildEmbeddedRunContexts,
   resolveModelFallbackOptions,
   resolveProviderScopedAuthProfile,
+  resolveProviderScopedRuntimeApiKey,
 } = await import("./agent-runner-utils.js");
 
 function makeRun(overrides: Partial<FollowupRun["run"]> = {}): FollowupRun["run"] {
@@ -90,6 +91,11 @@ describe("agent-runner-utils", () => {
       model: "gpt-4.1-mini",
       runId: "run-1",
       authProfile,
+      runtimeApiKey: resolveProviderScopedRuntimeApiKey({
+        provider: "openai",
+        primaryProvider: "openai",
+        runtimeApiKey: "sk-test",
+      }),
     });
 
     expect(resolved).toMatchObject({
@@ -104,6 +110,7 @@ describe("agent-runner-utils", () => {
       model: "gpt-4.1-mini",
       authProfileId: "profile-openai",
       authProfileIdSource: "user",
+      runtimeApiKey: "sk-test",
       thinkLevel: run.thinkLevel,
       verboseLevel: run.verboseLevel,
       reasoningLevel: run.reasoningLevel,
@@ -118,6 +125,7 @@ describe("agent-runner-utils", () => {
     const run = makeRun({
       authProfileId: "profile-openai",
       authProfileIdSource: "auto",
+      runtimeApiKey: "sk-runtime",
     });
 
     const resolved = buildEmbeddedRunContexts({
@@ -134,6 +142,9 @@ describe("agent-runner-utils", () => {
     expect(resolved.authProfile).toEqual({
       authProfileId: undefined,
       authProfileIdSource: undefined,
+    });
+    expect(resolved.runtimeApiKey).toEqual({
+      runtimeApiKey: undefined,
     });
     expect(resolved.embeddedContext).toMatchObject({
       sessionId: run.sessionId,

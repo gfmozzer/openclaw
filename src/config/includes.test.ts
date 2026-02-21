@@ -578,7 +578,15 @@ describe("security: path traversal protection (CWE-22)", () => {
           "{ logging: { redactSensitive: 'tools' } }\n",
           "utf-8",
         );
-        await fs.symlink(realRoot, linkRoot);
+        try {
+          await fs.symlink(realRoot, linkRoot);
+        } catch (error) {
+          const err = error as NodeJS.ErrnoException;
+          if (process.platform === "win32" && err.code === "EPERM") {
+            return;
+          }
+          throw error;
+        }
 
         const result = resolveConfigIncludes(
           { $include: "./includes/extra.json5" },

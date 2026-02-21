@@ -4,6 +4,11 @@ import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
+import type {
+  EnterpriseIdentityInput,
+  SwarmFormState,
+  SwarmTeamDefinition,
+} from "./controllers/swarm.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
 import type { UiSettings } from "./storage.ts";
@@ -128,7 +133,7 @@ export type AppViewState = {
   agentsList: AgentsListResult | null;
   agentsError: string | null;
   agentsSelectedId: string | null;
-  agentsPanel: "overview" | "files" | "tools" | "skills" | "channels" | "cron";
+  agentsPanel: "overview" | "files" | "memory" | "metrics" | "tools" | "skills" | "channels" | "cron" | "swarm";
   agentFilesLoading: boolean;
   agentFilesError: string | null;
   agentFilesList: AgentsFilesListResult | null;
@@ -143,6 +148,13 @@ export type AppViewState = {
   agentSkillsError: string | null;
   agentSkillsReport: SkillStatusReport | null;
   agentSkillsAgentId: string | null;
+  swarmLoading: boolean;
+  swarmSaving: boolean;
+  swarmError: string | null;
+  swarmTeams: SwarmTeamDefinition[];
+  swarmSelectedTeamId: string | null;
+  swarmForm: SwarmFormState;
+  swarmIdentity: EnterpriseIdentityInput;
   sessionsLoading: boolean;
   sessionsResult: SessionsListResult | null;
   sessionsError: string | null;

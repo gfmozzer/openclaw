@@ -11,6 +11,7 @@ import { createReplyPrefixOptions } from "../../channels/reply-prefix.js";
 import { resolveSessionFilePath } from "../../config/sessions.js";
 import { resolveSendPolicy } from "../../sessions/send-policy.js";
 import { INTERNAL_MESSAGE_CHANNEL } from "../../utils/message-channel.js";
+import { ADMIN_SCOPE } from "../method-scopes.js";
 import {
   abortChatRunById,
   abortChatRunsForSessionKey,
@@ -22,6 +23,7 @@ import {
 import { type ChatImageContent, parseMessageWithAttachments } from "../chat-attachments.js";
 import { stripEnvelopeFromMessages } from "../chat-sanitize.js";
 import { GATEWAY_CLIENT_CAPS, hasGatewayClientCap } from "../protocol/client-info.js";
+import { incrementEnterpriseMetric } from "../runtime-metrics.js";
 import {
   ErrorCodes,
   errorShape,
@@ -59,6 +61,71 @@ type AbortedPartialSnapshot = {
   text: string;
   abortOrigin: AbortOrigin;
 };
+
+type ChatRequestOverrides = {
+  provider?: string;
+  model?: string;
+  systemPrompt?: string;
+  soul?: string;
+  apiKey?: string;
+  authProfileId?: string;
+  skillAllowlist?: string[];
+};
+
+function sanitizeChatRequestOverrides(raw: unknown): ChatRequestOverrides | undefined {
+  if (!raw || typeof raw !== "object") {
+    return undefined;
+  }
+  const input = raw as Record<string, unknown>;
+  const trimString = (value: unknown, max: number): string | undefined => {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    return trimmed.slice(0, max);
+  };
+  const overrides: ChatRequestOverrides = {
+    provider: trimString(input.provider, 200),
+    model: trimString(input.model, 200),
+    systemPrompt: trimString(input.systemPrompt, 12_000),
+    soul: trimString(input.soul, 12_000),
+    apiKey: trimString(input.apiKey, 8_192),
+    authProfileId: trimString(input.authProfileId, 200),
+    skillAllowlist: Array.isArray(input.skillAllowlist)
+      ? input.skillAllowlist
+          .map((entry) => (typeof entry === "string" ? entry.trim().slice(0, 200) : ""))
+          .filter((entry) => Boolean(entry))
+      : undefined,
+  };
+  if (
+    !overrides.provider &&
+    !overrides.model &&
+    !overrides.systemPrompt &&
+    !overrides.soul &&
+    !overrides.apiKey &&
+    !overrides.authProfileId &&
+    !overrides.skillAllowlist
+  ) {
+    return undefined;
+  }
+  return overrides;
+}
+
+function hasScope(scopes: readonly string[] | undefined, scope: string): boolean {
+  return Array.isArray(scopes) && scopes.includes(scope);
+}
+
+function looksLikeDashboardPayload(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("```dashboard") ||
+    normalized.includes('"type":"dashboard"') ||
+    normalized.includes('"type": "dashboard"')
+  );
+}
 
 const CHAT_HISTORY_TEXT_MAX_CHARS = 12_000;
 const CHAT_HISTORY_MAX_SINGLE_MESSAGE_BYTES = 128 * 1024;
@@ -725,6 +792,7 @@ export const chatHandlers: GatewayRequestHandlers = {
         content?: unknown;
       }>;
       timeoutMs?: number;
+      overrides?: ChatRequestOverrides;
       idempotencyKey: string;
     };
     const sanitizedMessageResult = sanitizeChatSendMessageInput(p.message);
@@ -739,6 +807,15 @@ export const chatHandlers: GatewayRequestHandlers = {
     const inboundMessage = sanitizedMessageResult.message;
     const stopCommand = isChatStopCommandText(inboundMessage);
     const normalizedAttachments = normalizeRpcAttachmentsToChatAttachments(p.attachments);
+    if (
+      normalizedAttachments.some((attachment) =>
+        typeof attachment.mimeType === "string"
+          ? attachment.mimeType.toLowerCase().startsWith("audio/")
+          : false,
+      )
+    ) {
+      incrementEnterpriseMetric("chat_audio_requests_total");
+    }
     const rawMessage = inboundMessage.trim();
     if (!rawMessage && normalizedAttachments.length === 0) {
       respond(
@@ -769,6 +846,42 @@ export const chatHandlers: GatewayRequestHandlers = {
       cfg,
       overrideMs: p.timeoutMs,
     });
+    const requestOverrides = sanitizeChatRequestOverrides(p.overrides);
+    if (
+      requestOverrides &&
+      (requestOverrides.apiKey || requestOverrides.authProfileId) &&
+      !hasScope(client?.connect?.scopes, ADMIN_SCOPE)
+    ) {
+      incrementEnterpriseMetric("chat_tool_authorization_denied_total");
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.FORBIDDEN,
+          `chat.send overrides apiKey/authProfileId require scope: ${ADMIN_SCOPE}`,
+        ),
+      );
+      return;
+    }
+    // Audit accepted BYOK overrides (never log the key itself)
+    if (requestOverrides && (requestOverrides.apiKey || requestOverrides.authProfileId)) {
+      incrementEnterpriseMetric("byok_override_accepted_total");
+      if (context.auditEventStore) {
+        context.auditEventStore.append({
+          tenantId: context.tenantContext?.tenantId ?? "unknown",
+          requesterId: client?.connect?.device?.id,
+          action: "byok.override.accepted",
+          resource: `${requestOverrides.provider ?? "default"}/${requestOverrides.model ?? "default"}`,
+          metadata: {
+            provider: requestOverrides.provider,
+            model: requestOverrides.model,
+            hasApiKey: Boolean(requestOverrides.apiKey),
+            hasAuthProfileId: Boolean(requestOverrides.authProfileId),
+          },
+        }).catch(() => {});
+      }
+    }
+
     const now = Date.now();
     const clientRunId = p.idempotencyKey;
 
@@ -898,6 +1011,7 @@ export const chatHandlers: GatewayRequestHandlers = {
           runId: clientRunId,
           abortSignal: abortController.signal,
           images: parsedImages.length > 0 ? parsedImages : undefined,
+          requestOverrides,
           onAgentRunStart: (runId) => {
             agentRunStarted = true;
             const connId = typeof client?.connId === "string" ? client.connId : undefined;
@@ -927,6 +1041,9 @@ export const chatHandlers: GatewayRequestHandlers = {
               .filter(Boolean)
               .join("\n\n")
               .trim();
+            if (combinedReply && looksLikeDashboardPayload(combinedReply)) {
+              incrementEnterpriseMetric("chat_dashboard_responses_total");
+            }
             let message: Record<string, unknown> | undefined;
             if (combinedReply) {
               const { storePath: latestStorePath, entry: latestEntry } =

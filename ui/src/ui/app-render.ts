@@ -46,6 +46,19 @@ import { loadNodes } from "./controllers/nodes.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { deleteSessionAndRefresh, loadSessions, patchSession } from "./controllers/sessions.ts";
 import {
+  addSwarmWorker,
+  deleteSwarmTeam,
+  loadSwarmTeams,
+  removeSwarmWorker,
+  resetSwarmForm,
+  selectSwarmTeam,
+  setSwarmFormField,
+  setSwarmIdentityField,
+  updateSwarmWorkerField,
+  upsertSwarmTeam,
+  type SwarmWorkerForm,
+} from "./controllers/swarm.ts";
+import {
   installSkill,
   loadSkills,
   saveSkillApiKey,
@@ -68,6 +81,7 @@ import { renderNodes } from "./views/nodes.ts";
 import { renderOverview } from "./views/overview.ts";
 import { renderSessions } from "./views/sessions.ts";
 import { renderSkills } from "./views/skills.ts";
+import { renderLogin } from "./views/login.ts";
 
 const AVATAR_DATA_RE = /^data:/i;
 const AVATAR_HTTP_RE = /^https?:\/\//i;
@@ -89,6 +103,17 @@ function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
 }
 
 export function renderApp(state: AppViewState) {
+  if (!state.settings.gatewayUrl || !state.settings.token) {
+    return renderLogin({
+      gatewayUrl: state.settings.gatewayUrl,
+      token: state.settings.token,
+      onConnect: (url, token) => {
+        state.applySettings({ ...state.settings, gatewayUrl: url.trim(), token: token.trim() });
+        state.connect();
+      },
+    });
+  }
+
   const presenceCount = state.presenceEntries.length;
   const sessionsCount = state.sessionsResult?.count ?? null;
   const cronNext = state.cronStatus?.nextWakeAtMs ?? null;
@@ -125,11 +150,11 @@ export function renderApp(state: AppViewState) {
           </button>
           <div class="brand">
             <div class="brand-logo">
-              <img src=${basePath ? `${basePath}/favicon.svg` : "/favicon.svg"} alt="OpenClaw" />
+              <img src=${basePath ? `${basePath}/logo.png` : "/logo.png"} alt="Automadesk Agents" />
             </div>
             <div class="brand-text">
-              <div class="brand-title">OPENCLAW</div>
-              <div class="brand-sub">Gateway Dashboard</div>
+              <div class="brand-title">AUTOMADESK</div>
+              <div class="brand-sub">Agents Dashboard</div>
             </div>
           </div>
         </div>
@@ -385,6 +410,13 @@ export function renderApp(state: AppViewState) {
                 agentSkillsError: state.agentSkillsError,
                 agentSkillsAgentId: state.agentSkillsAgentId,
                 skillsFilter: state.skillsFilter,
+                swarmLoading: state.swarmLoading,
+                swarmSaving: state.swarmSaving,
+                swarmError: state.swarmError,
+                swarmTeams: state.swarmTeams,
+                swarmSelectedTeamId: state.swarmSelectedTeamId,
+                swarmForm: state.swarmForm,
+                swarmIdentity: state.swarmIdentity,
                 onRefresh: async () => {
                   await loadAgents(state);
                   const agentIds = state.agentsList?.agents?.map((entry) => entry.id) ?? [];
@@ -413,6 +445,10 @@ export function renderApp(state: AppViewState) {
                   if (state.agentsPanel === "skills") {
                     void loadAgentSkills(state, agentId);
                   }
+                  if (state.agentsPanel === "swarm") {
+                    resetSwarmForm(state, agentId);
+                    void loadSwarmTeams(state);
+                  }
                 },
                 onSelectPanel: (panel) => {
                   state.agentsPanel = panel;
@@ -436,6 +472,12 @@ export function renderApp(state: AppViewState) {
                   }
                   if (panel === "cron") {
                     void state.loadCron();
+                  }
+                  if (panel === "swarm") {
+                    if (resolvedAgentId) {
+                      resetSwarmForm(state, resolvedAgentId);
+                    }
+                    void loadSwarmTeams(state);
                   }
                 },
                 onLoadFiles: (agentId) => loadAgentFiles(state, agentId),
@@ -606,6 +648,39 @@ export function renderApp(state: AppViewState) {
                     return;
                   }
                   updateConfigFormValue(state, ["agents", "list", index, "skills"], []);
+                },
+                onSwarmRefresh: () => loadSwarmTeams(state),
+                onSwarmCreate: () => {
+                  resetSwarmForm(state, resolvedAgentId ?? "");
+                },
+                onSwarmSelectTeam: (teamId) => {
+                  selectSwarmTeam(state, teamId, resolvedAgentId ?? "");
+                },
+                onSwarmIdentityChange: (key, value) => {
+                  setSwarmIdentityField(state, key, value);
+                },
+                onSwarmFormChange: (key, value) => {
+                  setSwarmFormField(state, key, value);
+                },
+                onSwarmWorkerAdd: () => {
+                  addSwarmWorker(state);
+                },
+                onSwarmWorkerRemove: (index) => {
+                  removeSwarmWorker(state, index);
+                },
+                onSwarmWorkerChange: (index, key, value) => {
+                  updateSwarmWorkerField(
+                    state,
+                    index,
+                    key,
+                    value as SwarmWorkerForm[keyof SwarmWorkerForm],
+                  );
+                },
+                onSwarmSave: () => {
+                  void upsertSwarmTeam(state);
+                },
+                onSwarmDelete: (teamId) => {
+                  void deleteSwarmTeam(state, teamId, resolvedAgentId ?? "");
                 },
                 onModelChange: (agentId, modelId) => {
                   if (!configValue) {

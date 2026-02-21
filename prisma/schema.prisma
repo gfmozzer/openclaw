@@ -1,0 +1,308 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector] // Requires pgvector extension in the database
+}
+
+// ============================================================================
+// 1. CORE & TENANT ISOLATION
+// ============================================================================
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users              User[]
+  agents             Agent[]
+  sessions           Session[]
+  memories           MemoryInteraction[]
+  jobTrackers        TemporalJobTracker[]
+  providerOverrides  ProviderOverride[]
+  auditEvents        AuditEvent[]
+  swarmTeams         SwarmTeam[]
+  idempotencyRecords IdempotencyRecord[]
+  roles              Role[]
+  userRoles          UserRole[]
+  swarmMemberships   SwarmMembership[]
+
+  @@map("tenants")
+}
+
+// ============================================================================
+// 2. IDENTITY AND RBAC (Workflow 12)
+// ============================================================================
+
+model User {
+  id        String   @id @default(uuid())
+  tenantId  String
+  email     String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roles             UserRole[]
+  jobTrackers       TemporalJobTracker[]
+  providerOverrides ProviderOverride[]
+  sessions          Session[]
+
+  @@unique([tenantId, email])
+  @@unique([id, tenantId])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users  UserRole[]
+  scopes RoleScope[]
+
+  @@unique([tenantId, name])
+  @@unique([id, tenantId])
+  @@map("roles")
+}
+
+model Scope {
+  id          String   @id @default(uuid())
+  action      String   @unique // e.g., "finance.read", "agent.update", "swarm.execute"
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles RoleScope[]
+
+  @@map("scopes")
+}
+
+model UserRole {
+  userId   String
+  roleId   String
+  tenantId String
+
+  user   User   @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId, tenantId])
+  @@map("user_roles")
+}
+
+model RoleScope {
+  roleId  String
+  scopeId String
+
+  role  Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  scope Scope @relation(fields: [scopeId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, scopeId])
+  @@map("role_scopes")
+}
+
+// ============================================================================
+// 3. AGENT & SWARM DIRECTORY (Workflows 09 e 12)
+// ============================================================================
+
+model Agent {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String
+  description  String?
+  defaultModel String?
+  systemPrompt String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  skills AgentSkill[]
+
+  managedTeams SwarmTeam[]       @relation("ManagerAgent")
+  workerTeams  SwarmMembership[]
+
+  jobTrackers TemporalJobTracker[]
+
+  @@unique([tenantId, name])
+  @@unique([id, tenantId])
+  @@map("agents")
+}
+
+model AgentSkill {
+  agentId   String
+  skillName String // The identifier of the tool/skill to be loaded from the Tool Bus
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@id([agentId, skillName])
+  @@map("agent_skills")
+}
+
+model SwarmTeam {
+  id        String @id @default(uuid())
+  tenantId  String
+  name      String
+  managerId String // Every team has a Manager Agent
+
+  tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  manager Agent  @relation("ManagerAgent", fields: [managerId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  members SwarmMembership[]
+
+  @@unique([tenantId, name])
+  @@unique([id, tenantId])
+  @@map("swarm_teams")
+}
+
+model SwarmMembership {
+  teamId   String
+  tenantId String
+  workerId String // The sub-agent
+
+  team   SwarmTeam @relation(fields: [teamId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  worker Agent     @relation(fields: [workerId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, workerId, tenantId])
+  @@map("swarm_memberships")
+}
+
+// ============================================================================
+// 4. MEMORY & SESSIONS (Workflow 08)
+// ============================================================================
+
+model Session {
+  id          String   @id @default(uuid())
+  tenantId    String
+  requesterId String // The User that owns this session
+  title       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [requesterId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  memories MemoryInteraction[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, requesterId, updatedAt])
+  @@map("sessions")
+}
+
+model MemoryInteraction {
+  id        String   @id @default(uuid())
+  tenantId  String
+  sessionId String
+  role      String // "user", "assistant", "system", "tool"
+  content   Json // JSONB field for flexible payload / NoSQL behavior
+  createdAt DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  embeddings Embedding[]
+
+  @@index([tenantId, sessionId, createdAt])
+  @@map("memory_interactions")
+}
+
+model Embedding {
+  id            String                      @id @default(uuid())
+  interactionId String
+  vector        Unsupported("vector(1536)") // Based on pgvector
+  model         String // e.g., text-embedding-ada-002
+  createdAt     DateTime                    @default(now())
+
+  interaction MemoryInteraction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  @@map("embeddings")
+}
+
+// ============================================================================
+// 5. TEMPORAL METADATA TRACKER (Workflows 04 and 11)
+// ============================================================================
+
+model TemporalJobTracker {
+  id            String   @id @default(uuid())
+  jobId         String
+  tenantId      String
+  workflowId    String
+  correlationId String
+  requesterId   String
+  targetAgentId String
+  status        String // PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [requesterId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  agent  Agent  @relation(fields: [targetAgentId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@unique([tenantId, jobId])
+  @@unique([tenantId, workflowId])
+  @@unique([tenantId, correlationId])
+  @@index([tenantId, status, updatedAt])
+  @@map("temporal_job_trackers")
+}
+
+// ============================================================================
+// 6. BYOK AND SECURITY (Workflows 13)
+// ============================================================================
+
+model ProviderOverride {
+  id          String   @id @default(uuid())
+  tenantId    String
+  requesterId String
+  provider    String // e.g., "openai", "anthropic"
+  apiKeyE     String // Encrypted at rest (Envelope Encryption KMS)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [requesterId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@index([tenantId, requesterId, provider])
+  @@map("provider_overrides")
+}
+
+model AuditEvent {
+  id          String   @id @default(uuid())
+  tenantId    String
+  requesterId String?
+  action      String // e.g., "auth.denied", "byok.override", "schedule.denied"
+  resource    String?
+  metadata    Json? // Detailed reason or payload
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("audit_events")
+}
+
+model IdempotencyRecord {
+  id         String   @id @default(uuid())
+  tenantId   String
+  agentId    String?
+  operation  String
+  requestKey String
+  status     String
+  response   Json?
+  error      Json?
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  updatedAt  DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, operation, requestKey])
+  @@index([tenantId, status, expiresAt])
+  @@map("idempotency_records")
+}

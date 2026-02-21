@@ -53,6 +53,19 @@ export type GetReplyOptions = {
   hasRepliedRef?: { value: boolean };
   /** Override agent timeout in seconds (0 = no timeout). Threads through to resolveAgentTimeoutMs. */
   timeoutOverrideSeconds?: number;
+  /** Per-request hard overrides (not persisted to session state). */
+  requestOverrides?: {
+    provider?: string;
+    model?: string;
+    systemPrompt?: string;
+    soul?: string;
+    /** Per-request runtime API key (BYOK). Never persisted. */
+    apiKey?: string;
+    /** Optional auth profile pin for this run only. */
+    authProfileId?: string;
+    /** Per-request skill allowlist. Empty array disables skills for this run. */
+    skillAllowlist?: string[];
+  };
 };
 
 export type ReplyPayload = {

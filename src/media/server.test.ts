@@ -89,7 +89,15 @@ describe("media server", () => {
       },
     },
   ] as const)("$testName", async (testCase) => {
-    await testCase.setup?.();
+    try {
+      await testCase.setup?.();
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (process.platform === "win32" && err.code === "EPERM" && testCase.mediaPath === "link-out") {
+        return;
+      }
+      throw error;
+    }
     const res = await fetch(`http://127.0.0.1:${port}/media/${testCase.mediaPath}`);
     expect(res.status).toBe(400);
     expect(await res.text()).toBe("invalid path");

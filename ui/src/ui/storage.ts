@@ -18,13 +18,8 @@ export type UiSettings = {
 };
 
 export function loadSettings(): UiSettings {
-  const defaultUrl = (() => {
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    return `${proto}://${location.host}`;
-  })();
-
   const defaults: UiSettings = {
-    gatewayUrl: defaultUrl,
+    gatewayUrl: "",
     token: "",
     sessionKey: "main",
     lastActiveSessionKey: "main",

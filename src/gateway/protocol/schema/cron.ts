@@ -21,6 +21,25 @@ function cronAgentTurnPayloadSchema(params: { message: TSchema }) {
 
 const CronSessionTargetSchema = Type.Union([Type.Literal("main"), Type.Literal("isolated")]);
 const CronWakeModeSchema = Type.Union([Type.Literal("next-heartbeat"), Type.Literal("now")]);
+const TemporalCallerRoleSchema = Type.Union([Type.Literal("supervisor"), Type.Literal("worker")]);
+const CronTemporalOrchestrationSchema = Type.Object(
+  {
+    tenantId: Type.Optional(NonEmptyString),
+    targetTenantId: Type.Optional(NonEmptyString),
+    targetAgentId: Type.Optional(NonEmptyString),
+    idempotencyKey: Type.Optional(NonEmptyString),
+    caller: Type.Optional(
+      Type.Object(
+        {
+          agentId: NonEmptyString,
+          role: TemporalCallerRoleSchema,
+        },
+        { additionalProperties: false },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
 const CronCommonOptionalFields = {
   agentId: Type.Optional(Type.Union([NonEmptyString, Type.Null()])),
   sessionKey: Type.Optional(Type.Union([NonEmptyString, Type.Null()])),
@@ -200,6 +219,7 @@ export const CronAddParamsSchema = Type.Object(
     wakeMode: CronWakeModeSchema,
     payload: CronPayloadSchema,
     delivery: Type.Optional(CronDeliverySchema),
+    orchestration: Type.Optional(CronTemporalOrchestrationSchema),
   },
   { additionalProperties: false },
 );
@@ -222,7 +242,9 @@ export const CronUpdateParamsSchema = cronIdOrJobIdParams({
   patch: CronJobPatchSchema,
 });
 
-export const CronRemoveParamsSchema = cronIdOrJobIdParams({});
+export const CronRemoveParamsSchema = cronIdOrJobIdParams({
+  orchestration: Type.Optional(CronTemporalOrchestrationSchema),
+});
 
 export const CronRunParamsSchema = cronIdOrJobIdParams({
   mode: Type.Optional(Type.Union([Type.Literal("due"), Type.Literal("force")])),

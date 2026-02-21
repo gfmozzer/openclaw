@@ -21,6 +21,7 @@ import type { InlineDirectives } from "./directive-handling.js";
 import { isDirectiveOnly } from "./directive-handling.js";
 import type { createModelSelectionState } from "./model-selection.js";
 import { extractInlineSimpleCommand } from "./reply-inline.js";
+import { dispatchSkillToolViaBus } from "./skill-tool-bus.js";
 import type { TypingController } from "./typing.js";
 
 const builtinSlashCommands = (() => {
@@ -212,6 +213,23 @@ export async function handleInlineActions(params: {
 
       const toolCallId = `cmd_${Date.now()}_${Math.random().toString(16).slice(2)}`;
       try {
+        const remoteResult = await dispatchSkillToolViaBus({
+          ctx,
+          sessionKey,
+          agentId,
+          skillName: skillInvocation.command.skillName,
+          commandName: skillInvocation.command.name,
+          toolName: dispatch.toolName,
+          command: rawArgs,
+        });
+        if (remoteResult) {
+          const text = remoteResult.ok
+            ? (remoteResult.outputText?.trim() || "✅ Done.")
+            : `❌ ${remoteResult.errorMessage ?? "Remote skill dispatch failed."}`;
+          typing.cleanup();
+          return { kind: "reply", reply: { text } };
+        }
+
         const result = await tool.execute(toolCallId, {
           command: rawArgs,
           commandName: skillInvocation.command.name,

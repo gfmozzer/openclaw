@@ -12,6 +12,7 @@ import { loadConfig, writeConfigFile } from "../../config/config.js";
 import { getRemoteSkillEligibility } from "../../infra/skills-remote.js";
 import { normalizeAgentId } from "../../routing/session-key.js";
 import { normalizeSecretInput } from "../../utils/normalize-secret-input.js";
+import { resolveSkillAdapterMode } from "../skill-adapter-mode.js";
 import {
   ErrorCodes,
   errorShape,
@@ -55,7 +56,7 @@ function collectSkillBins(entries: SkillEntry[]): string[] {
 }
 
 export const skillsHandlers: GatewayRequestHandlers = {
-  "skills.status": ({ params, respond }) => {
+  "skills.status": async ({ params, respond, context }) => {
     if (!validateSkillsStatusParams(params)) {
       respond(
         false,
@@ -86,7 +87,29 @@ export const skillsHandlers: GatewayRequestHandlers = {
       config: cfg,
       eligibility: { remote: getRemoteSkillEligibility() },
     });
-    respond(true, report, undefined);
+    const mode = resolveSkillAdapterMode();
+    const manifests =
+      context.skillLoader &&
+      mode === "remote" &&
+      process.env.OPENCLAW_SKILL_TOOLBUS_ENDPOINT?.trim()
+        ? await context.skillLoader.loadManifests({
+            workspaceDir,
+            config: cfg,
+          })
+        : [];
+    respond(
+      true,
+      {
+        ...report,
+        adapter: {
+          mode,
+          transport: mode === "remote" ? "http-tool-bus" : "in-process",
+          endpointConfigured: Boolean(process.env.OPENCLAW_SKILL_TOOLBUS_ENDPOINT?.trim()),
+          manifestsLoaded: manifests.length,
+        },
+      },
+      undefined,
+    );
   },
   "skills.bins": ({ params, respond }) => {
     if (!validateSkillsBinsParams(params)) {

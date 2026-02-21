@@ -17,6 +17,7 @@ import {
 import { setCommandLaneConcurrency, getTotalQueueSize } from "../process/command-queue.js";
 import { CommandLane } from "../process/lanes.js";
 import type { ChannelKind, GatewayReloadPlan } from "./config-reload.js";
+import { resolveCronOrchestrationMode } from "./cron-orchestration-mode.js";
 import { resolveHooksConfig } from "./hooks.js";
 import { startBrowserControlServerIfEnabled } from "./server-browser.js";
 import { buildGatewayCronService, type GatewayCronState } from "./server-cron.js";
@@ -42,7 +43,7 @@ export function createGatewayReloadHandlers(params: {
   };
   logBrowser: { error: (msg: string) => void };
   logChannels: { info: (msg: string) => void; error: (msg: string) => void };
-  logCron: { error: (msg: string) => void };
+  logCron: { info: (msg: string) => void; error: (msg: string) => void };
   logReload: { info: (msg: string) => void; warn: (msg: string) => void };
 }) {
   const applyHotReload = async (
@@ -74,9 +75,15 @@ export function createGatewayReloadHandlers(params: {
         deps: params.deps,
         broadcast: params.broadcast,
       });
-      void nextState.cronState.cron
-        .start()
-        .catch((err) => params.logCron.error(`failed to start: ${String(err)}`));
+      if (resolveCronOrchestrationMode() === "local") {
+        void nextState.cronState.cron
+          .start()
+          .catch((err) => params.logCron.error(`failed to start: ${String(err)}`));
+      } else {
+        params.logCron.info(
+          "cron engine startup skipped after reload (OPENCLAW_CRON_ORCHESTRATION_MODE=temporal)",
+        );
+      }
     }
 
     if (plan.restartBrowserControl) {

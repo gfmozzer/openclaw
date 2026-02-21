@@ -156,6 +156,7 @@ export function buildEmbeddedRunBaseParams(params: {
   model: string;
   runId: string;
   authProfile: ReturnType<typeof resolveProviderScopedAuthProfile>;
+  runtimeApiKey: ReturnType<typeof resolveProviderScopedRuntimeApiKey>;
 }) {
   return {
     sessionFile: params.run.sessionFile,
@@ -169,6 +170,7 @@ export function buildEmbeddedRunBaseParams(params: {
     provider: params.provider,
     model: params.model,
     ...params.authProfile,
+    ...params.runtimeApiKey,
     thinkLevel: params.run.thinkLevel,
     verboseLevel: params.run.verboseLevel,
     reasoningLevel: params.run.reasoningLevel,
@@ -227,6 +229,11 @@ export function buildEmbeddedRunContexts(params: {
 }) {
   return {
     authProfile: resolveRunAuthProfile(params.run, params.provider),
+    runtimeApiKey: resolveProviderScopedRuntimeApiKey({
+      provider: params.provider,
+      primaryProvider: params.run.provider,
+      runtimeApiKey: params.run.runtimeApiKey,
+    }),
     embeddedContext: buildEmbeddedContextFromTemplate({
       run: params.run,
       sessionCtx: params.sessionCtx,
@@ -247,5 +254,16 @@ export function resolveProviderScopedAuthProfile(params: {
   return {
     authProfileId,
     authProfileIdSource: authProfileId ? params.authProfileIdSource : undefined,
+  };
+}
+
+export function resolveProviderScopedRuntimeApiKey(params: {
+  provider: string;
+  primaryProvider: string;
+  runtimeApiKey?: string;
+}): { runtimeApiKey?: string } {
+  return {
+    runtimeApiKey:
+      params.provider === params.primaryProvider ? params.runtimeApiKey?.trim() || undefined : undefined,
   };
 }

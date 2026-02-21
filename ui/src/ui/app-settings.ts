@@ -21,6 +21,7 @@ import { loadNodes } from "./controllers/nodes.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { loadSessions } from "./controllers/sessions.ts";
 import { loadSkills } from "./controllers/skills.ts";
+import { loadSwarmTeams, resetSwarmForm } from "./controllers/swarm.ts";
 import {
   inferBasePathFromPathname,
   normalizeBasePath,
@@ -50,7 +51,7 @@ type SettingsHost = {
   basePath: string;
   agentsList?: AgentsListResult | null;
   agentsSelectedId?: string | null;
-  agentsPanel?: "overview" | "files" | "tools" | "skills" | "channels" | "cron";
+  agentsPanel?: "overview" | "files" | "memory" | "metrics" | "tools" | "skills" | "channels" | "cron" | "swarm";
   themeMedia: MediaQueryList | null;
   themeMediaHandler: ((event: MediaQueryListEvent) => void) | null;
   pendingGatewayUrl?: string | null;
@@ -216,6 +217,10 @@ export async function refreshActiveTab(host: SettingsHost) {
       }
       if (host.agentsPanel === "cron") {
         void loadCron(host);
+      }
+      if (host.agentsPanel === "swarm") {
+        resetSwarmForm(host as unknown as Parameters<typeof resetSwarmForm>[0], agentId);
+        void loadSwarmTeams(host as unknown as Parameters<typeof loadSwarmTeams>[0]);
       }
     }
   }

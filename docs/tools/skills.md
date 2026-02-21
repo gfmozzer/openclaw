@@ -10,6 +10,8 @@ title: "Skills"
 
 OpenClaw uses **[AgentSkills](https://agentskills.io)-compatible** skill folders to teach the agent how to use tools. Each skill is a directory containing a `SKILL.md` with YAML frontmatter and instructions. OpenClaw loads **bundled skills** plus optional local overrides, and filters them at load time based on environment, config, and binary presence.
 
+For distributed deployments, enable remote skill execution with `OPENCLAW_SKILL_ADAPTER_MODE=remote` and configure `OPENCLAW_SKILL_TOOLBUS_ENDPOINT`. In this mode, skill commands configured with `command-dispatch: tool` are forwarded to the Tool Bus webhook (or n8n endpoint) instead of executing heavy tool code in the main bot container.
+
 ## Locations and precedence
 
 Skills are loaded from **three** places:

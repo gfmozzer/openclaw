@@ -8,12 +8,21 @@ import type {
   CronStatus,
   SkillStatusReport,
 } from "../types.ts";
+import type {
+  EnterpriseIdentityInput,
+  SwarmFormState,
+  SwarmTeamDefinition,
+  SwarmWorkerForm,
+} from "../controllers/swarm.ts";
 import {
   renderAgentFiles,
   renderAgentChannels,
   renderAgentCron,
 } from "./agents-panels-status-files.ts";
 import { renderAgentTools, renderAgentSkills } from "./agents-panels-tools-skills.ts";
+import { renderAgentMemory } from "./agents-panels-memory.ts";
+import { renderAgentMetrics } from "./agents-panels-metrics.ts";
+import { renderAgentSwarm } from "./agents-panels-swarm.ts";
 import {
   agentBadgeText,
   buildAgentContext,
@@ -28,7 +37,7 @@ import {
   resolveModelPrimary,
 } from "./agents-utils.ts";
 
-export type AgentsPanel = "overview" | "files" | "tools" | "skills" | "channels" | "cron";
+export type AgentsPanel = "overview" | "files" | "memory" | "metrics" | "tools" | "skills" | "channels" | "cron" | "swarm";
 
 export type AgentsProps = {
   loading: boolean;
@@ -63,6 +72,13 @@ export type AgentsProps = {
   agentSkillsError: string | null;
   agentSkillsAgentId: string | null;
   skillsFilter: string;
+  swarmLoading: boolean;
+  swarmSaving: boolean;
+  swarmError: string | null;
+  swarmTeams: SwarmTeamDefinition[];
+  swarmSelectedTeamId: string | null;
+  swarmForm: SwarmFormState;
+  swarmIdentity: EnterpriseIdentityInput;
   onRefresh: () => void;
   onSelectAgent: (agentId: string) => void;
   onSelectPanel: (panel: AgentsPanel) => void;
@@ -84,6 +100,23 @@ export type AgentsProps = {
   onAgentSkillToggle: (agentId: string, skillName: string, enabled: boolean) => void;
   onAgentSkillsClear: (agentId: string) => void;
   onAgentSkillsDisableAll: (agentId: string) => void;
+  onSwarmRefresh: () => void;
+  onSwarmCreate: () => void;
+  onSwarmSelectTeam: (teamId: string) => void;
+  onSwarmIdentityChange: <K extends keyof EnterpriseIdentityInput>(
+    key: K,
+    value: EnterpriseIdentityInput[K],
+  ) => void;
+  onSwarmFormChange: <K extends keyof SwarmFormState>(key: K, value: SwarmFormState[K]) => void;
+  onSwarmWorkerAdd: () => void;
+  onSwarmWorkerRemove: (index: number) => void;
+  onSwarmWorkerChange: <K extends keyof SwarmWorkerForm>(
+    index: number,
+    key: K,
+    value: SwarmWorkerForm[K],
+  ) => void;
+  onSwarmSave: () => void;
+  onSwarmDelete: (teamId: string) => void;
 };
 
 export type AgentContext = {
@@ -203,6 +236,41 @@ export function renderAgents(props: AgentsProps) {
                     : nothing
                 }
                 ${
+                  props.activePanel === "memory"
+                    ? renderAgentMemory({ agentId: selectedAgent.id })
+                    : nothing
+                }
+                ${
+                  props.activePanel === "metrics"
+                    ? renderAgentMetrics({ agentId: selectedAgent.id })
+                    : nothing
+                }
+                ${
+                  props.activePanel === "swarm"
+                    ? renderAgentSwarm({
+                        agentId: selectedAgent.id,
+                        loading: props.swarmLoading,
+                        saving: props.swarmSaving,
+                        error: props.swarmError,
+                        teams: props.swarmTeams,
+                        selectedTeamId: props.swarmSelectedTeamId,
+                        form: props.swarmForm,
+                        identity: props.swarmIdentity,
+                        availableAgentIds: agents.map((entry) => entry.id),
+                        onRefresh: props.onSwarmRefresh,
+                        onCreate: props.onSwarmCreate,
+                        onSelectTeam: props.onSwarmSelectTeam,
+                        onIdentityChange: props.onSwarmIdentityChange,
+                        onFormChange: props.onSwarmFormChange,
+                        onWorkerAdd: props.onSwarmWorkerAdd,
+                        onWorkerRemove: props.onSwarmWorkerRemove,
+                        onWorkerChange: props.onSwarmWorkerChange,
+                        onSave: props.onSwarmSave,
+                        onDelete: props.onSwarmDelete,
+                      })
+                    : nothing
+                }
+                ${
                   props.activePanel === "tools"
                     ? renderAgentTools({
                         agentId: selectedAgent.id,
@@ -315,6 +383,9 @@ function renderAgentTabs(active: AgentsPanel, onSelect: (panel: AgentsPanel) => 
   const tabs: Array<{ id: AgentsPanel; label: string }> = [
     { id: "overview", label: "Overview" },
     { id: "files", label: "Files" },
+    { id: "memory", label: "Memory (LTM)" },
+    { id: "metrics", label: "Metrics" },
+    { id: "swarm", label: "Swarm" },
     { id: "tools", label: "Tools" },
     { id: "skills", label: "Skills" },
     { id: "channels", label: "Channels" },
@@ -414,6 +485,10 @@ function renderAgentOverview(params: {
         <div class="agent-kv">
           <div class="label">Primary Model</div>
           <div class="mono">${model}</div>
+        </div>
+        <div class="agent-kv">
+          <div class="label">Access Token</div>
+          <div class="mono" style="word-break: break-all;">${(configForm as any)?.gateway?.auth?.token || "**********"}</div>
         </div>
         <div class="agent-kv">
           <div class="label">Identity Name</div>

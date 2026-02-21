@@ -23,6 +23,7 @@ import {
   resolveStorePath,
 } from "../../../config/sessions.js";
 import { logVerbose, shouldLogVerbose } from "../../../globals.js";
+import { createTenantResolver } from "../../../gateway/stateless/multitenancy/index.js";
 import type { getChildLogger } from "../../../logging.js";
 import { getAgentScopedMediaLocalRoots } from "../../../media/local-roots.js";
 import { readChannelAllowFromStore } from "../../../pairing/pairing-store.js";
@@ -136,6 +137,7 @@ export async function processMessage(params: {
   groupHistory?: GroupHistoryEntry[];
   suppressGroupHistoryClear?: boolean;
 }) {
+  const tenantResolver = createTenantResolver();
   const conversationId = params.msg.conversationId ?? params.msg.from;
   const storePath = resolveStorePath(params.cfg.session?.store, {
     agentId: params.route.agentId,
@@ -284,7 +286,24 @@ export async function processMessage(params: {
         )
       : undefined;
 
+  const senderPhone =
+    normalizeE164(params.msg.senderE164 ?? "") ??
+    normalizeE164(params.msg.from) ??
+    normalizeE164(params.msg.senderJid ?? "");
+  const fallbackTenantSeed = `whatsapp-${params.route.accountId}-${params.route.sessionKey}`;
+  const tenantContext = tenantResolver.resolve({
+    phoneNumber: senderPhone ?? undefined,
+    userId: params.msg.senderJid ?? params.msg.from,
+    channel: "whatsapp",
+    accountId: params.route.accountId,
+    fallbackTenantId: fallbackTenantSeed,
+    requestId: params.msg.id,
+  });
+
   const ctxPayload = finalizeInboundContext({
+    TenantId: tenantContext.tenantId,
+    TenantUserId: tenantContext.principal.userId,
+    TenantPhoneNumber: tenantContext.principal.phoneNumber,
     Body: combinedBody,
     BodyForAgent: params.msg.body,
     InboundHistory: inboundHistory,

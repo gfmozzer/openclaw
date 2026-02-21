@@ -1,0 +1,1995 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-02-21T18:03:30.481Z",
+  "stack": {
+    "primaryLanguage": "typescript",
+    "languages": [
+      "javascript",
+      "typescript",
+      "swift",
+      "python"
+    ],
+    "frameworks": [],
+    "buildTools": [
+      "docker",
+      "docker-compose",
+      "pnpm-workspace"
+    ],
+    "testFrameworks": [
+      "vitest"
+    ],
+    "packageManager": "pnpm",
+    "isMonorepo": true,
+    "hasDocker": true,
+    "hasCI": true,
+    "nodeVersion": ">=22.12.0",
+    "runtimeEnvironment": "node"
+  },
+  "structure": {
+    "totalFiles": 6154,
+    "rootPath": ".",
+    "topDirectories": [
+      {
+        "name": "apps",
+        "fileCount": 655,
+        "description": "Application entry (Next.js app router)"
+      },
+      {
+        "name": "assets",
+        "fileCount": 12,
+        "description": "Static assets (images, fonts)"
+      },
+      {
+        "name": "docs",
+        "fileCount": 692,
+        "description": "Documentation files"
+      },
+      {
+        "name": "extensions",
+        "fileCount": 705,
+        "description": "Extension definitions"
+      },
+      {
+        "name": "git-hooks",
+        "fileCount": 1,
+        "description": "React hooks"
+      },
+      {
+        "name": "packages",
+        "fileCount": 6,
+        "description": "Package definitions"
+      },
+      {
+        "name": "patches",
+        "fileCount": 0,
+        "description": "Patche definitions"
+      },
+      {
+        "name": "scripts",
+        "fileCount": 121,
+        "description": "Build and utility scripts"
+      },
+      {
+        "name": "skills",
+        "fileCount": 71,
+        "description": "Skill definitions"
+      },
+      {
+        "name": "src",
+        "fileCount": 3457,
+        "description": "Source code root"
+      },
+      {
+        "name": "Swabble",
+        "fileCount": 32,
+        "description": "Module directory"
+      },
+      {
+        "name": "test",
+        "fileCount": 27,
+        "description": "Test files"
+      },
+      {
+        "name": "ui",
+        "fileCount": 182,
+        "description": "Build output directory"
+      },
+      {
+        "name": "vendor",
+        "fileCount": 158,
+        "description": "Module directory"
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".ts",
+        "count": 4291
+      },
+      {
+        "extension": ".md",
+        "count": 782
+      },
+      {
+        "extension": ".swift",
+        "count": 502
+      },
+      {
+        "extension": ".json",
+        "count": 112
+      },
+      {
+        "extension": ".png",
+        "count": 79
+      },
+      {
+        "extension": ".kt",
+        "count": 77
+      },
+      {
+        "extension": ".prose",
+        "count": 64
+      },
+      {
+        "extension": ".sh",
+        "count": 54
+      },
+      {
+        "extension": ".js",
+        "count": 16
+      },
+      {
+        "extension": ".css",
+        "count": 14
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Config",
+        "description": "Configuration and constants",
+        "directories": [
+          ".",
+          "ui",
+          "src\\wizard",
+          "src\\web",
+          "src\\telegram",
+          "src\\plugins",
+          "src\\plugin-sdk",
+          "src\\node-host",
+          "src\\memory",
+          "src\\media",
+          "src\\logging",
+          "src\\imessage",
+          "src\\hooks",
+          "src\\infra",
+          "src\\gateway",
+          "src\\daemon",
+          "src\\config",
+          "src\\commands",
+          "src\\cli",
+          "src\\channels",
+          "src\\browser",
+          "src\\agents",
+          "extensions\\memory-lancedb",
+          "ui\\src\\ui",
+          "src\\web\\auto-reply",
+          "src\\slack\\monitor",
+          "src\\gateway\\server-methods",
+          "src\\config\\sessions",
+          "src\\cli\\program",
+          "src\\channels\\plugins",
+          "src\\auto-reply\\reply",
+          "src\\agents\\skills",
+          "src\\agents\\sandbox",
+          "src\\agents\\auth-profiles",
+          "extensions\\voice-call\\src",
+          "extensions\\twitch\\src",
+          "extensions\\googlechat\\src",
+          "extensions\\feishu\\src",
+          "ui\\src\\ui\\chat",
+          "src\\commands\\onboard-non-interactive\\local",
+          "src\\auto-reply\\reply\\queue",
+          "src\\agents\\pi-extensions\\context-pruning",
+          "extensions\\matrix\\src\\matrix\\client"
+        ],
+        "symbolCount": 958,
+        "dependsOn": [
+          "Components"
+        ]
+      },
+      {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "src",
+          "src\\web",
+          "src\\utils",
+          "src\\test-utils",
+          "src\\test-helpers",
+          "src\\telegram",
+          "src\\slack",
+          "src\\shared",
+          "src\\sessions",
+          "src\\security",
+          "src\\providers",
+          "src\\process",
+          "src\\plugins",
+          "src\\plugin-sdk",
+          "src\\memory",
+          "src\\media",
+          "src\\line",
+          "src\\imessage",
+          "src\\hooks",
+          "src\\infra",
+          "src\\gateway",
+          "src\\discord",
+          "src\\config",
+          "src\\commands",
+          "src\\cli",
+          "src\\channels",
+          "src\\browser",
+          "src\\agents",
+          "test\\helpers",
+          "extensions\\shared",
+          "ui\\src\\ui",
+          "src\\web\\auto-reply",
+          "src\\telegram\\bot",
+          "src\\shared\\text",
+          "src\\shared\\net",
+          "src\\media-understanding\\providers",
+          "src\\line\\flex-templates",
+          "src\\gateway\\server-methods",
+          "src\\discord\\monitor",
+          "src\\cron\\isolated-agent",
+          "src\\commands\\gateway-status",
+          "src\\commands\\channels",
+          "src\\cli\\update-cli",
+          "src\\cli\\shared",
+          "src\\cli\\program",
+          "src\\cli\\nodes-cli",
+          "src\\cli\\gateway-cli",
+          "src\\cli\\daemon-cli",
+          "src\\cli\\cron-cli",
+          "src\\cli\\browser-cli-actions-input",
+          "src\\channels\\plugins",
+          "src\\channels\\allowlists",
+          "src\\auto-reply\\reply",
+          "src\\agents\\test-helpers",
+          "src\\agents\\tools",
+          "src\\agents\\sandbox",
+          "src\\agents\\pi-embedded-runner",
+          "src\\agents\\pi-embedded-helpers",
+          "src\\agents\\cli-runner",
+          "extensions\\voice-call\\src",
+          "extensions\\msteams\\src",
+          "extensions\\mattermost\\src",
+          "extensions\\bluebubbles\\src",
+          "ui\\src\\ui\\views",
+          "ui\\src\\ui\\test-helpers",
+          "ui\\src\\ui\\chat",
+          "ui\\src\\i18n\\lib",
+          "src\\gateway\\server\\__tests__",
+          "src\\commands\\onboarding\\__tests__",
+          "src\\cli\\program\\message",
+          "src\\channels\\plugins\\status-issues",
+          "src\\channels\\plugins\\onboarding",
+          "src\\auto-reply\\reply\\commands-subagents",
+          "extensions\\twitch\\src\\utils",
+          "extensions\\tlon\\src\\monitor",
+          "extensions\\msteams\\src\\attachments",
+          "extensions\\mattermost\\src\\mattermost",
+          "extensions\\matrix\\src\\matrix\\client",
+          "apps\\shared\\OpenClawKit\\Tools\\CanvasA2UI"
+        ],
+        "symbolCount": 1306,
+        "dependsOn": [
+          "Config",
+          "Components",
+          "Models",
+          "Controllers"
+        ]
+      },
+      {
+        "name": "Controllers",
+        "description": "Request handling and routing",
+        "directories": [
+          "src",
+          "src\\web",
+          "src\\utils",
+          "src\\types",
+          "src\\tui",
+          "src\\telegram",
+          "src\\signal",
+          "src\\routing",
+          "src\\line",
+          "src\\gateway",
+          "src\\discord",
+          "src\\config",
+          "src\\commands",
+          "src\\cli",
+          "src\\agents",
+          "src\\web\\inbound",
+          "src\\signal\\monitor",
+          "src\\slack\\monitor",
+          "src\\imessage\\monitor",
+          "src\\infra\\outbound",
+          "src\\gateway\\server-methods",
+          "src\\discord\\monitor",
+          "src\\commands\\onboard-non-interactive",
+          "src\\cli\\program",
+          "src\\channels\\telegram",
+          "src\\browser\\routes",
+          "src\\auto-reply\\reply",
+          "src\\agents\\tools",
+          "extensions\\zalo\\src",
+          "extensions\\msteams\\src",
+          "extensions\\googlechat\\src",
+          "ui\\src\\ui\\controllers",
+          "ui\\src\\i18n\\lib",
+          "src\\web\\auto-reply\\monitor",
+          "src\\slack\\monitor\\message-handler",
+          "src\\hooks\\bundled\\session-memory",
+          "src\\hooks\\bundled\\command-logger",
+          "src\\hooks\\bundled\\bootstrap-extra-files",
+          "src\\hooks\\bundled\\boot-md",
+          "src\\gateway\\server\\ws-connection",
+          "extensions\\msteams\\src\\monitor-handler",
+          "ui\\src\\ui\\controllers\\config",
+          "extensions\\voice-call\\src\\providers\\twilio",
+          "extensions\\matrix\\src\\matrix\\monitor"
+        ],
+        "symbolCount": 491,
+        "dependsOn": [
+          "Models",
+          "Components"
+        ]
+      },
+      {
+        "name": "Repositories",
+        "description": "Data access and persistence",
+        "directories": [
+          "scripts",
+          "src\\slack",
+          "src\\shared",
+          "src\\security",
+          "src\\auto-reply",
+          "src\\agents",
+          "src\\gateway\\server-methods",
+          "src\\config\\sessions",
+          "ui\\src\\ui\\data",
+          "src\\media-understanding\\providers\\google"
+        ],
+        "symbolCount": 33,
+        "dependsOn": []
+      },
+      {
+        "name": "Models",
+        "description": "Data structures and domain objects",
+        "directories": [
+          "scripts",
+          "src\\test-utils",
+          "src\\telegram",
+          "src\\shared",
+          "src\\sessions",
+          "src\\providers",
+          "src\\plugins",
+          "src\\memory",
+          "src\\line",
+          "src\\infra",
+          "src\\gateway",
+          "src\\config",
+          "src\\commands",
+          "src\\cli",
+          "src\\channels",
+          "src\\auto-reply",
+          "src\\agents",
+          "src\\gateway\\server-methods",
+          "src\\gateway\\protocol",
+          "src\\discord\\monitor",
+          "src\\commands\\models",
+          "src\\channels\\plugins",
+          "src\\auto-reply\\reply",
+          "src\\agents\\tools",
+          "src\\agents\\schema",
+          "src\\agents\\pi-embedded-runner",
+          "extensions\\zalouser\\src",
+          "extensions\\zalo\\src",
+          "extensions\\twitch\\src",
+          "extensions\\tlon\\src",
+          "extensions\\nostr\\src",
+          "extensions\\nextcloud-talk\\src",
+          "extensions\\mattermost\\src",
+          "extensions\\matrix\\src",
+          "extensions\\irc\\src",
+          "extensions\\feishu\\src",
+          "extensions\\bluebubbles\\src",
+          "src\\gateway\\protocol\\schema",
+          "skills\\model-usage\\scripts"
+        ],
+        "symbolCount": 810,
+        "dependsOn": []
+      },
+      {
+        "name": "Services",
+        "description": "Business logic and orchestration",
+        "directories": [
+          "src\\plugins",
+          "src\\daemon",
+          "src\\cron",
+          "src\\commands",
+          "src\\browser",
+          "src\\infra\\outbound",
+          "src\\cron\\service",
+          "src\\cli\\daemon-cli",
+          "extensions\\diagnostics-otel\\src"
+        ],
+        "symbolCount": 253,
+        "dependsOn": []
+      },
+      {
+        "name": "Generators",
+        "description": "Content and object generation",
+        "directories": [
+          "src\\hooks",
+          "extensions\\voice-call\\src"
+        ],
+        "symbolCount": 5,
+        "dependsOn": []
+      },
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "src\\discord",
+          "src\\cli",
+          "src\\browser",
+          "ui\\src\\ui",
+          "src\\tui\\components",
+          "src\\discord\\monitor",
+          "src\\cli\\nodes-cli",
+          "ui\\src\\ui\\views",
+          "ui\\src\\ui\\components",
+          "ui\\src\\ui\\views\\usage-styles"
+        ],
+        "symbolCount": 266,
+        "dependsOn": [
+          "Models",
+          "Config"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "name": "Service Layer",
+        "confidence": 0.85,
+        "description": "Encapsulates business logic in service classes",
+        "occurrences": 1
+      },
+      {
+        "name": "Controller",
+        "confidence": 0.9,
+        "description": "Handles incoming requests and returns responses",
+        "occurrences": 1
+      },
+      {
+        "name": "Observer",
+        "confidence": 0.75,
+        "description": "Defines a subscription mechanism to notify multiple objects",
+        "occurrences": 9
+      }
+    ],
+    "entryPoints": [
+      "src\\index.ts",
+      "ui\\src\\main.ts",
+      "src\\signal\\index.ts",
+      "src\\slack\\index.ts",
+      "src\\plugins\\cli.ts",
+      "src\\plugin-sdk\\index.ts",
+      "src\\memory\\index.ts",
+      "src\\media-understanding\\index.ts",
+      "src\\media\\server.ts",
+      "src\\link-understanding\\index.ts",
+      "src\\line\\index.ts",
+      "src\\imessage\\index.ts",
+      "src\\gateway\\server.ts",
+      "src\\discord\\index.ts",
+      "src\\canvas-host\\server.ts",
+      "src\\browser\\server.ts",
+      "src\\acp\\server.ts",
+      "src\\acp\\index.ts",
+      "extensions\\zalouser\\index.ts",
+      "extensions\\zalo\\index.ts",
+      "extensions\\whatsapp\\index.ts",
+      "extensions\\voice-call\\index.ts",
+      "extensions\\twitch\\index.ts",
+      "extensions\\tlon\\index.ts",
+      "extensions\\thread-ownership\\index.ts",
+      "extensions\\telegram\\index.ts",
+      "extensions\\talk-voice\\index.ts",
+      "extensions\\slack\\index.ts",
+      "extensions\\signal\\index.ts",
+      "extensions\\qwen-portal-auth\\index.ts",
+      "extensions\\phone-control\\index.ts",
+      "extensions\\open-prose\\index.ts",
+      "extensions\\nostr\\index.ts",
+      "extensions\\nextcloud-talk\\index.ts",
+      "extensions\\msteams\\index.ts",
+      "extensions\\minimax-portal-auth\\index.ts",
+      "extensions\\memory-lancedb\\index.ts",
+      "extensions\\memory-core\\index.ts",
+      "extensions\\mattermost\\index.ts",
+      "extensions\\matrix\\index.ts",
+      "extensions\\lobster\\index.ts",
+      "extensions\\llm-task\\index.ts",
+      "extensions\\line\\index.ts",
+      "extensions\\irc\\index.ts",
+      "extensions\\imessage\\index.ts",
+      "extensions\\googlechat\\index.ts",
+      "extensions\\google-gemini-cli-auth\\index.ts",
+      "extensions\\google-antigravity-auth\\index.ts",
+      "extensions\\feishu\\index.ts",
+      "extensions\\discord\\index.ts",
+      "extensions\\diagnostics-otel\\index.ts",
+      "extensions\\device-pair\\index.ts",
+      "extensions\\copilot-proxy\\index.ts",
+      "extensions\\bluebubbles\\index.ts",
+      "ui\\src\\ui\\app.ts",
+      "ui\\src\\i18n\\index.ts",
+      "src\\slack\\http\\index.ts",
+      "src\\process\\supervisor\\index.ts",
+      "src\\plugins\\runtime\\index.ts",
+      "src\\media-understanding\\providers\\index.ts",
+      "src\\gateway\\protocol\\index.ts",
+      "src\\channels\\web\\index.ts",
+      "src\\channels\\plugins\\index.ts",
+      "src\\browser\\routes\\index.ts",
+      "extensions\\voice-call\\src\\cli.ts",
+      "extensions\\msteams\\src\\index.ts",
+      "src\\media-understanding\\providers\\zai\\index.ts",
+      "src\\media-understanding\\providers\\openai\\index.ts",
+      "src\\media-understanding\\providers\\minimax\\index.ts",
+      "src\\media-understanding\\providers\\google\\index.ts",
+      "src\\media-understanding\\providers\\groq\\index.ts",
+      "src\\media-understanding\\providers\\deepgram\\index.ts",
+      "src\\media-understanding\\providers\\anthropic\\index.ts",
+      "extensions\\voice-call\\src\\providers\\index.ts",
+      "extensions\\tlon\\src\\monitor\\index.ts",
+      "extensions\\mattermost\\src\\mattermost\\index.ts",
+      "extensions\\matrix\\src\\matrix\\index.ts",
+      "extensions\\matrix\\src\\matrix\\monitor\\index.ts",
+      "packages\\moltbot\\index.js",
+      "packages\\clawdbot\\index.js"
+    ],
+    "mainEntryPoints": [
+      "src\\index.ts",
+      "ui\\src\\main.ts",
+      "src\\signal\\index.ts",
+      "src\\slack\\index.ts",
+      "src\\plugins\\cli.ts",
+      "src\\plugin-sdk\\index.ts",
+      "src\\memory\\index.ts",
+      "src\\media-understanding\\index.ts",
+      "src\\media\\server.ts",
+      "src\\link-understanding\\index.ts",
+      "src\\line\\index.ts",
+      "src\\imessage\\index.ts",
+      "src\\gateway\\server.ts",
+      "src\\discord\\index.ts",
+      "src\\canvas-host\\server.ts",
+      "src\\browser\\server.ts",
+      "src\\acp\\server.ts",
+      "src\\acp\\index.ts",
+      "extensions\\zalouser\\index.ts",
+      "extensions\\zalo\\index.ts",
+      "extensions\\whatsapp\\index.ts",
+      "extensions\\voice-call\\index.ts",
+      "extensions\\twitch\\index.ts",
+      "extensions\\tlon\\index.ts",
+      "extensions\\thread-ownership\\index.ts",
+      "extensions\\telegram\\index.ts",
+      "extensions\\talk-voice\\index.ts",
+      "extensions\\slack\\index.ts",
+      "extensions\\signal\\index.ts",
+      "extensions\\qwen-portal-auth\\index.ts",
+      "extensions\\phone-control\\index.ts",
+      "extensions\\open-prose\\index.ts",
+      "extensions\\nostr\\index.ts",
+      "extensions\\nextcloud-talk\\index.ts",
+      "extensions\\msteams\\index.ts",
+      "extensions\\minimax-portal-auth\\index.ts",
+      "extensions\\memory-lancedb\\index.ts",
+      "extensions\\memory-core\\index.ts",
+      "extensions\\mattermost\\index.ts",
+      "extensions\\matrix\\index.ts",
+      "extensions\\lobster\\index.ts",
+      "extensions\\llm-task\\index.ts",
+      "extensions\\line\\index.ts",
+      "extensions\\irc\\index.ts",
+      "extensions\\imessage\\index.ts",
+      "extensions\\googlechat\\index.ts",
+      "extensions\\google-gemini-cli-auth\\index.ts",
+      "extensions\\google-antigravity-auth\\index.ts",
+      "extensions\\feishu\\index.ts",
+      "extensions\\discord\\index.ts",
+      "extensions\\diagnostics-otel\\index.ts",
+      "extensions\\device-pair\\index.ts",
+      "extensions\\copilot-proxy\\index.ts",
+      "extensions\\bluebubbles\\index.ts",
+      "ui\\src\\ui\\app.ts",
+      "ui\\src\\i18n\\index.ts",
+      "src\\slack\\http\\index.ts",
+      "src\\process\\supervisor\\index.ts",
+      "src\\plugins\\runtime\\index.ts",
+      "src\\media-understanding\\providers\\index.ts",
+      "src\\gateway\\protocol\\index.ts",
+      "src\\channels\\web\\index.ts",
+      "src\\channels\\plugins\\index.ts",
+      "src\\browser\\routes\\index.ts",
+      "extensions\\voice-call\\src\\cli.ts",
+      "extensions\\msteams\\src\\index.ts",
+      "src\\media-understanding\\providers\\zai\\index.ts",
+      "src\\media-understanding\\providers\\openai\\index.ts",
+      "src\\media-understanding\\providers\\minimax\\index.ts",
+      "src\\media-understanding\\providers\\google\\index.ts",
+      "src\\media-understanding\\providers\\groq\\index.ts",
+      "src\\media-understanding\\providers\\deepgram\\index.ts",
+      "src\\media-understanding\\providers\\anthropic\\index.ts",
+      "extensions\\voice-call\\src\\providers\\index.ts",
+      "extensions\\tlon\\src\\monitor\\index.ts",
+      "extensions\\mattermost\\src\\mattermost\\index.ts",
+      "extensions\\matrix\\src\\matrix\\index.ts",
+      "extensions\\matrix\\src\\matrix\\monitor\\index.ts",
+      "packages\\moltbot\\index.js",
+      "packages\\clawdbot\\index.js"
+    ],
+    "moduleExports": []
+  },
+  "symbols": {
+    "classes": [
+      {
+        "name": "AcpGatewayAgent",
+        "kind": "class",
+        "file": "src\\acp\\translator.ts",
+        "line": 64,
+        "exported": true
+      },
+      {
+        "name": "AssistantMessageComponent",
+        "kind": "class",
+        "file": "src\\tui\\components\\assistant-message.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "CallManager",
+        "kind": "class",
+        "file": "extensions\\voice-call\\src\\manager.ts",
+        "line": 41,
+        "exported": true
+      },
+      {
+        "name": "ChatLog",
+        "kind": "class",
+        "file": "src\\tui\\components\\chat-log.ts",
+        "line": 8,
+        "exported": true
+      },
+      {
+        "name": "CircularIncludeError",
+        "kind": "class",
+        "file": "src\\config\\includes.ts",
+        "line": 47,
+        "exported": true
+      },
+      {
+        "name": "CommandLaneClearedError",
+        "kind": "class",
+        "file": "src\\process\\command-queue.ts",
+        "line": 8,
+        "exported": true
+      },
+      {
+        "name": "ConfigIncludeError",
+        "kind": "class",
+        "file": "src\\config\\includes.ts",
+        "line": 36,
+        "exported": true
+      },
+      {
+        "name": "CronService",
+        "kind": "class",
+        "file": "src\\cron\\service.ts",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "CustomApiError",
+        "kind": "class",
+        "file": "src\\commands\\onboard-custom.ts",
+        "line": 94,
+        "exported": true
+      },
+      {
+        "name": "CustomEditor",
+        "kind": "class",
+        "file": "src\\tui\\components\\custom-editor.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "DirectoryCache",
+        "kind": "class",
+        "file": "src\\infra\\outbound\\directory-cache.ts",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "DiscordApiError",
+        "kind": "class",
+        "file": "src\\discord\\api.ts",
+        "line": 80,
+        "exported": true
+      },
+      {
+        "name": "DiscordExecApprovalHandler",
+        "kind": "class",
+        "file": "src\\discord\\monitor\\exec-approvals.ts",
+        "line": 316,
+        "exported": true
+      },
+      {
+        "name": "DiscordMessageListener",
+        "kind": "class",
+        "file": "src\\discord\\monitor\\listeners.ts",
+        "line": 79,
+        "exported": true
+      },
+      {
+        "name": "DiscordPresenceListener",
+        "kind": "class",
+        "file": "src\\discord\\monitor\\listeners.ts",
+        "line": 413,
+        "exported": true
+      },
+      {
+        "name": "DiscordReactionListener",
+        "kind": "class",
+        "file": "src\\discord\\monitor\\listeners.ts",
+        "line": 106,
+        "exported": true
+      },
+      {
+        "name": "DiscordReactionRemoveListener",
+        "kind": "class",
+        "file": "src\\discord\\monitor\\listeners.ts",
+        "line": 123,
+        "exported": true
+      },
+      {
+        "name": "DiscordSendError",
+        "kind": "class",
+        "file": "src\\discord\\send.types.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "DiscordStatusReadyListener",
+        "kind": "class",
+        "file": "src\\discord\\monitor\\provider.ts",
+        "line": 459,
+        "exported": true
+      },
+      {
+        "name": "DiscordUiContainer",
+        "kind": "class",
+        "file": "src\\discord\\ui.ts",
+        "line": 32,
+        "exported": true
+      },
+      {
+        "name": "DiscordVoiceManager",
+        "kind": "class",
+        "file": "src\\discord\\voice\\manager.ts",
+        "line": 259,
+        "exported": true
+      },
+      {
+        "name": "DiscordVoiceReadyListener",
+        "kind": "class",
+        "file": "src\\discord\\voice\\manager.ts",
+        "line": 664,
+        "exported": true
+      },
+      {
+        "name": "DuplicateAgentDirError",
+        "kind": "class",
+        "file": "src\\config\\agent-dirs.ts",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "EdgeTTS",
+        "kind": "class",
+        "file": "src\\types\\node-edge-tts.d.ts",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "EmbeddedBlockChunker",
+        "kind": "class",
+        "file": "src\\agents\\pi-embedded-block-chunker.ts",
+        "line": 94,
+        "exported": true
+      },
+      {
+        "name": "ExecApprovalButton",
+        "kind": "class",
+        "file": "src\\discord\\monitor\\exec-approvals.ts",
+        "line": 735,
+        "exported": true
+      },
+      {
+        "name": "ExecApprovalManager",
+        "kind": "class",
+        "file": "src\\gateway\\exec-approval-manager.ts",
+        "line": 40,
+        "exported": true
+      },
+      {
+        "name": "FailoverError",
+        "kind": "class",
+        "file": "src\\agents\\failover-error.ts",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "FeishuStreamingSession",
+        "kind": "class",
+        "file": "extensions\\feishu\\src\\streaming-card.ts",
+        "line": 61,
+        "exported": true
+      },
+      {
+        "name": "FilterableSelectList",
+        "kind": "class",
+        "file": "src\\tui\\components\\filterable-select-list.ts",
+        "line": 28,
+        "exported": true
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "AuthRateLimiter",
+        "kind": "interface",
+        "file": "src\\gateway\\auth-rate-limit.ts",
+        "line": 56,
+        "exported": true
+      },
+      {
+        "name": "CachedSticker",
+        "kind": "interface",
+        "file": "src\\telegram\\sticker-cache.ts",
+        "line": 20,
+        "exported": true
+      },
+      {
+        "name": "CardAction",
+        "kind": "interface",
+        "file": "src\\line\\flex-templates\\types.ts",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "ChatMember",
+        "kind": "interface",
+        "file": "extensions\\msteams\\src\\graph-upload.ts",
+        "line": 218,
+        "exported": true
+      },
+      {
+        "name": "CodeBlock",
+        "kind": "interface",
+        "file": "src\\line\\markdown-to-line.ts",
+        "line": 221,
+        "exported": true
+      },
+      {
+        "name": "CreateRichMenuParams",
+        "kind": "interface",
+        "file": "src\\line\\rich-menu.ts",
+        "line": 30,
+        "exported": true
+      },
+      {
+        "name": "DescribeStickerParams",
+        "kind": "interface",
+        "file": "src\\telegram\\sticker-cache.ts",
+        "line": 147,
+        "exported": true
+      },
+      {
+        "name": "DetectedImageRef",
+        "kind": "interface",
+        "file": "src\\agents\\pi-embedded-runner\\run\\images.ts",
+        "line": 30,
+        "exported": true
+      },
+      {
+        "name": "DriveItemProperties",
+        "kind": "interface",
+        "file": "extensions\\msteams\\src\\graph-upload.ts",
+        "line": 227,
+        "exported": true
+      },
+      {
+        "name": "FileConsentCardParams",
+        "kind": "interface",
+        "file": "extensions\\msteams\\src\\file-consent.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "FileConsentResponse",
+        "kind": "interface",
+        "file": "extensions\\msteams\\src\\file-consent.ts",
+        "line": 67,
+        "exported": true
+      },
+      {
+        "name": "FileConsentUploadInfo",
+        "kind": "interface",
+        "file": "extensions\\msteams\\src\\file-consent.ts",
+        "line": 59,
+        "exported": true
+      },
+      {
+        "name": "FileInfoCardParams",
+        "kind": "interface",
+        "file": "extensions\\msteams\\src\\file-consent.ts",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "FilterableSelectItem",
+        "kind": "interface",
+        "file": "src\\tui\\components\\filterable-select-list.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "FilterableSelectListTheme",
+        "kind": "interface",
+        "file": "src\\tui\\components\\filterable-select-list.ts",
+        "line": 20,
+        "exported": true
+      },
+      {
+        "name": "FinishedSession",
+        "kind": "interface",
+        "file": "src\\agents\\bash-process-registry.ts",
+        "line": 57,
+        "exported": true
+      },
+      {
+        "name": "I18nConfig",
+        "kind": "interface",
+        "file": "ui\\src\\i18n\\lib\\types.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "InternalHookEvent",
+        "kind": "interface",
+        "file": "src\\hooks\\internal-hooks.ts",
+        "line": 95,
+        "exported": true
+      },
+      {
+        "name": "LineAccountConfig",
+        "kind": "interface",
+        "file": "src\\line\\types.ts",
+        "line": 37,
+        "exported": true
+      },
+      {
+        "name": "LineBot",
+        "kind": "interface",
+        "file": "src\\line\\bot.ts",
+        "line": 23,
+        "exported": true
+      },
+      {
+        "name": "LineBotOptions",
+        "kind": "interface",
+        "file": "src\\line\\bot.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "LineConfig",
+        "kind": "interface",
+        "file": "src\\line\\types.ts",
+        "line": 32,
+        "exported": true
+      },
+      {
+        "name": "LineGroupConfig",
+        "kind": "interface",
+        "file": "src\\line\\types.ts",
+        "line": 39,
+        "exported": true
+      },
+      {
+        "name": "LineHandlerContext",
+        "kind": "interface",
+        "file": "src\\line\\bot-handlers.ts",
+        "line": 35,
+        "exported": true
+      },
+      {
+        "name": "LineProviderMonitor",
+        "kind": "interface",
+        "file": "src\\line\\monitor.ts",
+        "line": 42,
+        "exported": true
+      },
+      {
+        "name": "LineSendResult",
+        "kind": "interface",
+        "file": "src\\line\\types.ts",
+        "line": 73,
+        "exported": true
+      },
+      {
+        "name": "LineWebhookContext",
+        "kind": "interface",
+        "file": "src\\line\\types.ts",
+        "line": 65,
+        "exported": true
+      },
+      {
+        "name": "LineWebhookOptions",
+        "kind": "interface",
+        "file": "src\\line\\webhook.ts",
+        "line": 8,
+        "exported": true
+      },
+      {
+        "name": "ListItem",
+        "kind": "interface",
+        "file": "src\\line\\flex-templates\\types.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "MarkdownLink",
+        "kind": "interface",
+        "file": "src\\line\\markdown-to-line.ts",
+        "line": 294,
+        "exported": true
+      }
+    ],
+    "functions": [
+      {
+        "name": "__resetDiscordChannelInfoCacheForTest",
+        "kind": "function",
+        "file": "src\\discord\\monitor\\message-utils.ts",
+        "line": 55,
+        "exported": true
+      },
+      {
+        "name": "__resetDiscordThreadStarterCacheForTest",
+        "kind": "function",
+        "file": "src\\discord\\monitor\\threading.ts",
+        "line": 44,
+        "exported": true
+      },
+      {
+        "name": "__resetModelCatalogCacheForTest",
+        "kind": "function",
+        "file": "src\\gateway\\server-model-catalog.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "__setModelCatalogImportForTest",
+        "kind": "function",
+        "file": "src\\agents\\model-catalog.ts",
+        "line": 66,
+        "exported": true
+      },
+      {
+        "name": "_clearAllClientManagersForTest",
+        "kind": "function",
+        "file": "extensions\\twitch\\src\\client-manager-registry.ts",
+        "line": 113,
+        "exported": true
+      },
+      {
+        "name": "_resetBlueBubblesShortIdState",
+        "kind": "function",
+        "file": "extensions\\bluebubbles\\src\\monitor-reply-cache.ts",
+        "line": 121,
+        "exported": true
+      },
+      {
+        "name": "abortChatRun",
+        "kind": "function",
+        "file": "ui\\src\\ui\\controllers\\chat.ts",
+        "line": 168,
+        "exported": true
+      },
+      {
+        "name": "abortChatRunById",
+        "kind": "function",
+        "file": "src\\gateway\\chat-abort.ts",
+        "line": 77,
+        "exported": true
+      },
+      {
+        "name": "abortChatRunsForSessionKey",
+        "kind": "function",
+        "file": "src\\gateway\\chat-abort.ts",
+        "line": 110,
+        "exported": true
+      },
+      {
+        "name": "abortEmbeddedPiRun",
+        "kind": "function",
+        "file": "src\\agents\\pi-embedded-runner\\runs.ts",
+        "line": 40,
+        "exported": true
+      },
+      {
+        "name": "ackDelivery",
+        "kind": "function",
+        "file": "src\\infra\\outbound\\delivery-queue.ts",
+        "line": 111,
+        "exported": true
+      },
+      {
+        "name": "acquireFileLock",
+        "kind": "function",
+        "file": "src\\plugin-sdk\\file-lock.ts",
+        "line": 103,
+        "exported": true
+      },
+      {
+        "name": "acquireGatewayLock",
+        "kind": "function",
+        "file": "src\\infra\\gateway-lock.ts",
+        "line": 165,
+        "exported": true
+      },
+      {
+        "name": "acquireSessionWriteLock",
+        "kind": "function",
+        "file": "src\\agents\\session-write-lock.ts",
+        "line": 373,
+        "exported": true
+      },
+      {
+        "name": "actionHasTarget",
+        "kind": "function",
+        "file": "src\\infra\\outbound\\message-action-spec.ts",
+        "line": 75,
+        "exported": true
+      },
+      {
+        "name": "actionRequiresTarget",
+        "kind": "function",
+        "file": "src\\infra\\outbound\\message-action-spec.ts",
+        "line": 71,
+        "exported": true
+      },
+      {
+        "name": "activeTaglines",
+        "kind": "function",
+        "file": "src\\cli\\tagline.ts",
+        "line": 245,
+        "exported": true
+      },
+      {
+        "name": "add",
+        "kind": "function",
+        "file": "src\\cron\\service\\ops.ts",
+        "line": 89,
+        "exported": true
+      },
+      {
+        "name": "add",
+        "kind": "function",
+        "file": "extensions\\nostr\\src\\seen-tracker.ts",
+        "line": 188,
+        "exported": true
+      },
+      {
+        "name": "addAllowlistEntry",
+        "kind": "function",
+        "file": "src\\infra\\exec-approvals.ts",
+        "line": 463,
+        "exported": true
+      },
+      {
+        "name": "addAllowlistUserEntriesFromConfigEntry",
+        "kind": "function",
+        "file": "src\\channels\\allowlists\\resolve-utils.ts",
+        "line": 99,
+        "exported": true
+      },
+      {
+        "name": "addBlueBubblesParticipant",
+        "kind": "function",
+        "file": "extensions\\bluebubbles\\src\\chat.ts",
+        "line": 211,
+        "exported": true
+      },
+      {
+        "name": "addChannelAllowFromStoreEntry",
+        "kind": "function",
+        "file": "src\\pairing\\pairing-store.ts",
+        "line": 393,
+        "exported": true
+      },
+      {
+        "name": "addCronJob",
+        "kind": "function",
+        "file": "ui\\src\\ui\\controllers\\cron.ts",
+        "line": 119,
+        "exported": true
+      },
+      {
+        "name": "addExecApproval",
+        "kind": "function",
+        "file": "ui\\src\\ui\\controllers\\exec-approval.ts",
+        "line": 86,
+        "exported": true
+      },
+      {
+        "name": "addFallbackCommand",
+        "kind": "function",
+        "file": "src\\commands\\models\\fallbacks-shared.ts",
+        "line": 74,
+        "exported": true
+      },
+      {
+        "name": "addGatewayClientOptions",
+        "kind": "function",
+        "file": "src\\cli\\gateway-rpc.ts",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "addGatewayRunCommand",
+        "kind": "function",
+        "file": "src\\cli\\gateway-cli\\run.ts",
+        "line": 355,
+        "exported": true
+      },
+      {
+        "name": "addGatewayServiceCommands",
+        "kind": "function",
+        "file": "src\\cli\\daemon-cli\\register-service-commands.ts",
+        "line": 38,
+        "exported": true
+      },
+      {
+        "name": "addMattermostReaction",
+        "kind": "function",
+        "file": "extensions\\mattermost\\src\\mattermost\\reactions.ts",
+        "line": 36,
+        "exported": true
+      }
+    ],
+    "types": [
+      {
+        "name": "A2UIVersion",
+        "kind": "type",
+        "file": "src\\cli\\nodes-cli\\a2ui-jsonl.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "AckReactionGateParams",
+        "kind": "type",
+        "file": "src\\channels\\ack-reactions.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "AckReactionScope",
+        "kind": "type",
+        "file": "src\\channels\\ack-reactions.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "AcpClientHandle",
+        "kind": "type",
+        "file": "src\\acp\\client.ts",
+        "line": 245,
+        "exported": true
+      },
+      {
+        "name": "AcpClientOptions",
+        "kind": "type",
+        "file": "src\\acp\\client.ts",
+        "line": 237,
+        "exported": true
+      },
+      {
+        "name": "AcpServerOptions",
+        "kind": "type",
+        "file": "src\\acp\\types.ts",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "AcpSession",
+        "kind": "type",
+        "file": "src\\acp\\types.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "AcpSessionMeta",
+        "kind": "type",
+        "file": "src\\acp\\session-mapper.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "AcpSessionStore",
+        "kind": "type",
+        "file": "src\\acp\\session.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "Action",
+        "kind": "type",
+        "file": "src\\line\\actions.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "Action",
+        "kind": "type",
+        "file": "src\\line\\flex-templates\\types.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "ActionGate",
+        "kind": "type",
+        "file": "src\\channels\\plugins\\account-action-gate.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "ActionGate",
+        "kind": "type",
+        "file": "src\\agents\\tools\\common.ts",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "ActiveMediaModel",
+        "kind": "type",
+        "file": "src\\media-understanding\\runner.ts",
+        "line": 60,
+        "exported": true
+      },
+      {
+        "name": "ActiveWebListener",
+        "kind": "type",
+        "file": "src\\web\\active-listener.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "ActiveWebSendOptions",
+        "kind": "type",
+        "file": "src\\web\\active-listener.ts",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "ActKind",
+        "kind": "type",
+        "file": "src\\browser\\routes\\agent.act.shared.ts",
+        "line": 16,
+        "exported": true
+      },
+      {
+        "name": "AgentAvatarResolution",
+        "kind": "type",
+        "file": "src\\agents\\identity-avatar.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "AgentBinding",
+        "kind": "type",
+        "file": "src\\config\\types.agents.ts",
+        "line": 73,
+        "exported": true
+      },
+      {
+        "name": "AgentBootstrapHookContext",
+        "kind": "type",
+        "file": "src\\hooks\\internal-hooks.ts",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "AgentBootstrapHookEvent",
+        "kind": "type",
+        "file": "src\\hooks\\internal-hooks.ts",
+        "line": 23,
+        "exported": true
+      },
+      {
+        "name": "AgentCliOpts",
+        "kind": "type",
+        "file": "src\\commands\\agent-via-gateway.ts",
+        "line": 36,
+        "exported": true
+      },
+      {
+        "name": "AgentCommandOpts",
+        "kind": "type",
+        "file": "src\\commands\\agent\\types.ts",
+        "line": 30,
+        "exported": true
+      },
+      {
+        "name": "AgentCompactionConfig",
+        "kind": "type",
+        "file": "src\\config\\types.agent-defaults.ts",
+        "line": 289,
+        "exported": true
+      },
+      {
+        "name": "AgentCompactionMemoryFlushConfig",
+        "kind": "type",
+        "file": "src\\config\\types.agent-defaults.ts",
+        "line": 304,
+        "exported": true
+      },
+      {
+        "name": "AgentCompactionMode",
+        "kind": "type",
+        "file": "src\\config\\types.agent-defaults.ts",
+        "line": 287,
+        "exported": true
+      },
+      {
+        "name": "AgentConfig",
+        "kind": "type",
+        "file": "src\\config\\types.agents.ts",
+        "line": 21,
+        "exported": true
+      },
+      {
+        "name": "AgentContext",
+        "kind": "type",
+        "file": "ui\\src\\ui\\views\\agents.ts",
+        "line": 89,
+        "exported": true
+      },
+      {
+        "name": "AgentContext",
+        "kind": "type",
+        "file": "ui\\src\\ui\\views\\agents-utils.ts",
+        "line": 220,
+        "exported": true
+      },
+      {
+        "name": "AgentContextPruningConfig",
+        "kind": "type",
+        "file": "src\\config\\types.agent-defaults.ts",
+        "line": 28,
+        "exported": true
+      }
+    ],
+    "enums": [
+      {
+        "name": "CommandLane",
+        "kind": "enum",
+        "file": "src\\process\\lanes.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "LlamaLogLevel",
+        "kind": "enum",
+        "file": "src\\types\\node-llama-cpp.d.ts",
+        "line": 2,
+        "exported": true
+      }
+    ]
+  },
+  "publicAPI": [
+    {
+      "name": "__resetDiscordChannelInfoCacheForTest",
+      "kind": "function",
+      "file": "src\\discord\\monitor\\message-utils.ts",
+      "line": 55,
+      "exported": true
+    },
+    {
+      "name": "__resetDiscordThreadStarterCacheForTest",
+      "kind": "function",
+      "file": "src\\discord\\monitor\\threading.ts",
+      "line": 44,
+      "exported": true
+    },
+    {
+      "name": "__resetModelCatalogCacheForTest",
+      "kind": "function",
+      "file": "src\\gateway\\server-model-catalog.ts",
+      "line": 13,
+      "exported": true
+    },
+    {
+      "name": "__setModelCatalogImportForTest",
+      "kind": "function",
+      "file": "src\\agents\\model-catalog.ts",
+      "line": 66,
+      "exported": true
+    },
+    {
+      "name": "_clearAllClientManagersForTest",
+      "kind": "function",
+      "file": "extensions\\twitch\\src\\client-manager-registry.ts",
+      "line": 113,
+      "exported": true
+    },
+    {
+      "name": "_resetBlueBubblesShortIdState",
+      "kind": "function",
+      "file": "extensions\\bluebubbles\\src\\monitor-reply-cache.ts",
+      "line": 121,
+      "exported": true
+    },
+    {
+      "name": "A2UIVersion",
+      "kind": "type",
+      "file": "src\\cli\\nodes-cli\\a2ui-jsonl.ts",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "abortChatRun",
+      "kind": "function",
+      "file": "ui\\src\\ui\\controllers\\chat.ts",
+      "line": 168,
+      "exported": true
+    },
+    {
+      "name": "abortChatRunById",
+      "kind": "function",
+      "file": "src\\gateway\\chat-abort.ts",
+      "line": 77,
+      "exported": true
+    },
+    {
+      "name": "abortChatRunsForSessionKey",
+      "kind": "function",
+      "file": "src\\gateway\\chat-abort.ts",
+      "line": 110,
+      "exported": true
+    },
+    {
+      "name": "abortEmbeddedPiRun",
+      "kind": "function",
+      "file": "src\\agents\\pi-embedded-runner\\runs.ts",
+      "line": 40,
+      "exported": true
+    },
+    {
+      "name": "ackDelivery",
+      "kind": "function",
+      "file": "src\\infra\\outbound\\delivery-queue.ts",
+      "line": 111,
+      "exported": true
+    },
+    {
+      "name": "AckReactionGateParams",
+      "kind": "type",
+      "file": "src\\channels\\ack-reactions.ts",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "AckReactionScope",
+      "kind": "type",
+      "file": "src\\channels\\ack-reactions.ts",
+      "line": 1,
+      "exported": true
+    },
+    {
+      "name": "AcpClientHandle",
+      "kind": "type",
+      "file": "src\\acp\\client.ts",
+      "line": 245,
+      "exported": true
+    },
+    {
+      "name": "AcpClientOptions",
+      "kind": "type",
+      "file": "src\\acp\\client.ts",
+      "line": 237,
+      "exported": true
+    },
+    {
+      "name": "AcpGatewayAgent",
+      "kind": "class",
+      "file": "src\\acp\\translator.ts",
+      "line": 64,
+      "exported": true
+    },
+    {
+      "name": "AcpServerOptions",
+      "kind": "type",
+      "file": "src\\acp\\types.ts",
+      "line": 14,
+      "exported": true
+    },
+    {
+      "name": "AcpSession",
+      "kind": "type",
+      "file": "src\\acp\\types.ts",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "AcpSessionMeta",
+      "kind": "type",
+      "file": "src\\acp\\session-mapper.ts",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "AcpSessionStore",
+      "kind": "type",
+      "file": "src\\acp\\session.ts",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "acquireFileLock",
+      "kind": "function",
+      "file": "src\\plugin-sdk\\file-lock.ts",
+      "line": 103,
+      "exported": true
+    },
+    {
+      "name": "acquireGatewayLock",
+      "kind": "function",
+      "file": "src\\infra\\gateway-lock.ts",
+      "line": 165,
+      "exported": true
+    },
+    {
+      "name": "acquireSessionWriteLock",
+      "kind": "function",
+      "file": "src\\agents\\session-write-lock.ts",
+      "line": 373,
+      "exported": true
+    },
+    {
+      "name": "Action",
+      "kind": "type",
+      "file": "src\\line\\actions.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "Action",
+      "kind": "type",
+      "file": "src\\line\\flex-templates\\types.ts",
+      "line": 11,
+      "exported": true
+    },
+    {
+      "name": "ActionGate",
+      "kind": "type",
+      "file": "src\\channels\\plugins\\account-action-gate.ts",
+      "line": 1,
+      "exported": true
+    },
+    {
+      "name": "ActionGate",
+      "kind": "type",
+      "file": "src\\agents\\tools\\common.ts",
+      "line": 19,
+      "exported": true
+    },
+    {
+      "name": "actionHasTarget",
+      "kind": "function",
+      "file": "src\\infra\\outbound\\message-action-spec.ts",
+      "line": 75,
+      "exported": true
+    },
+    {
+      "name": "actionRequiresTarget",
+      "kind": "function",
+      "file": "src\\infra\\outbound\\message-action-spec.ts",
+      "line": 71,
+      "exported": true
+    }
+  ],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "ui\\src\\ui\\types.ts",
+        "importedBy": 55,
+        "description": "Type definitions"
+      },
+      {
+        "file": "ui\\src\\ui\\gateway.ts",
+        "importedBy": 24
+      },
+      {
+        "file": "ui\\src\\ui\\format.ts",
+        "importedBy": 23
+      },
+      {
+        "file": "src\\infra\\format-time\\format-relative.ts",
+        "importedBy": 14
+      },
+      {
+        "file": "ui\\src\\ui\\navigation.ts",
+        "importedBy": 12
+      },
+      {
+        "file": "ui\\src\\ui\\views\\channels.types.ts",
+        "importedBy": 11,
+        "description": "View templates"
+      },
+      {
+        "file": "src\\infra\\format-time\\format-duration.ts",
+        "importedBy": 10
+      },
+      {
+        "file": "ui\\src\\ui\\views\\channels.config.ts",
+        "importedBy": 9,
+        "description": "View templates"
+      },
+      {
+        "file": "ui\\src\\ui\\app.ts",
+        "importedBy": 8
+      },
+      {
+        "file": "ui\\src\\ui\\ui-types.ts",
+        "importedBy": 8
+      },
+      {
+        "file": "ui\\src\\ui\\icons.ts",
+        "importedBy": 7
+      },
+      {
+        "file": "ui\\src\\ui\\views\\config-form.shared.ts",
+        "importedBy": 7,
+        "description": "View templates"
+      },
+      {
+        "file": "ui\\src\\ui\\theme.ts",
+        "importedBy": 6
+      },
+      {
+        "file": "ui\\src\\ui\\app-settings.ts",
+        "importedBy": 6
+      },
+      {
+        "file": "ui\\src\\ui\\presenter.ts",
+        "importedBy": 6
+      },
+      {
+        "file": "vitest.config.ts",
+        "importedBy": 5
+      },
+      {
+        "file": "ui\\src\\i18n\\index.ts",
+        "importedBy": 5,
+        "description": "i18n module exports"
+      },
+      {
+        "file": "ui\\src\\ui\\app-scroll.ts",
+        "importedBy": 5
+      },
+      {
+        "file": "ui\\src\\ui\\app-tool-stream.ts",
+        "importedBy": 5
+      },
+      {
+        "file": "ui\\src\\ui\\app-view-state.ts",
+        "importedBy": 5
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 16866,
+    "exportedSymbols": 9073,
+    "analysisTimeMs": 20904
+  },
+  "keyFiles": [
+    {
+      "path": "extensions\\bluebubbles\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\copilot-proxy\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\device-pair\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\diagnostics-otel\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\discord\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\feishu\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\google-antigravity-auth\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\google-gemini-cli-auth\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\googlechat\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\imessage\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\irc\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\line\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\llm-task\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\lobster\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\matrix\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\matrix\\src\\matrix\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\matrix\\src\\matrix\\monitor\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\mattermost\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\mattermost\\src\\mattermost\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\memory-core\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\memory-lancedb\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\minimax-portal-auth\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\msteams\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\msteams\\src\\index.ts",
+      "description": "src module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\nextcloud-talk\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\nostr\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\open-prose\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\phone-control\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\qwen-portal-auth\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    },
+    {
+      "path": "extensions\\signal\\index.ts",
+      "description": "Module exports",
+      "category": "entrypoint"
+    }
+  ],
+  "navigation": {
+    "tests": "**/__tests__/**/*.ts",
+    "config": [
+      "package.json",
+      "tsconfig.json",
+      "tsconfig.*.json",
+      "vitest.config.ts"
+    ],
+    "types": [
+      "src\\types\\qrcode-terminal.d.ts",
+      "src\\types\\osc-progress.d.ts",
+      "src\\types\\napi-rs-canvas.d.ts",
+      "src\\types\\node-edge-tts.d.ts",
+      "src\\types\\lydell-node-pty.d.ts",
+      "src\\types\\cli-highlight.d.ts",
+      "src\\types\\node-llama-cpp.d.ts",
+      "src\\types\\pdfjs-dist-legacy.d.ts",
+      "src\\infra\\scripts-modules.d.ts"
+    ],
+    "mainLogic": [
+      "src"
+    ]
+  }
+}

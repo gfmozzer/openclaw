@@ -188,7 +188,21 @@ export async function runPreparedReply(
   const inboundMetaPrompt = buildInboundMetaSystemPrompt(
     isNewSession ? sessionCtx : { ...sessionCtx, ThreadStarterBody: undefined },
   );
+  const requestSystemPrompt = opts?.requestOverrides?.systemPrompt?.trim();
+  const requestSoulPrompt = opts?.requestOverrides?.soul?.trim();
+  const requestHardOverridePrompt =
+    requestSystemPrompt || requestSoulPrompt
+      ? [
+          "[Request-level hard override - apply to this run only]",
+          "Treat the following as highest-priority persona/behavior instructions for this request.",
+          requestSoulPrompt ? `[SOUL]\n${requestSoulPrompt}` : "",
+          requestSystemPrompt ? `[SYSTEM]\n${requestSystemPrompt}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n\n")
+      : "";
   const extraSystemPrompt = [inboundMetaPrompt, groupChatContext, groupIntro, groupSystemPrompt]
+    .concat(requestHardOverridePrompt ? [requestHardOverridePrompt] : [])
     .filter(Boolean)
     .join("\n\n");
   const baseBody = sessionCtx.BodyStripped ?? sessionCtx.Body ?? "";
@@ -381,7 +395,9 @@ export async function runPreparedReply(
     resolvedQueue.mode === "followup" ||
     resolvedQueue.mode === "collect" ||
     resolvedQueue.mode === "steer-backlog";
-  const authProfileId = await resolveSessionAuthProfileOverride({
+  const requestAuthProfileId = opts?.requestOverrides?.authProfileId?.trim();
+  const requestApiKey = opts?.requestOverrides?.apiKey?.trim();
+  const resolvedSessionAuthProfileId = await resolveSessionAuthProfileOverride({
     cfg,
     provider,
     agentDir,
@@ -391,7 +407,10 @@ export async function runPreparedReply(
     storePath,
     isNewSession,
   });
-  const authProfileIdSource = sessionEntry?.authProfileOverrideSource;
+  const authProfileId = requestAuthProfileId || resolvedSessionAuthProfileId;
+  const authProfileIdSource = requestAuthProfileId
+    ? "user"
+    : sessionEntry?.authProfileOverrideSource;
   const followupRun = {
     prompt: queuedBody,
     messageId: sessionCtx.MessageSidFull ?? sessionCtx.MessageSid,
@@ -426,6 +445,7 @@ export async function runPreparedReply(
       model,
       authProfileId,
       authProfileIdSource,
+      runtimeApiKey: requestApiKey || undefined,
       thinkLevel: resolvedThinkLevel,
       verboseLevel: resolvedVerboseLevel,
       reasoningLevel: resolvedReasoningLevel,

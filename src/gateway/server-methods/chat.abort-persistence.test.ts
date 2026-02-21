@@ -129,6 +129,44 @@ afterEach(() => {
 });
 
 describe("chat abort transcript persistence", () => {
+  it("denies chat.send BYOK overrides without admin scope", async () => {
+    const { sessionId } = await createTranscriptFixture("openclaw-chat-byok-scope-");
+    const respond = vi.fn();
+    const context = createChatAbortContext({
+      chatAbortControllers: new Map([["run-1", createActiveRun("main", sessionId)]]),
+      chatRunBuffers: new Map([["run-1", "partial"]]),
+      chatDeltaSentAt: new Map([["run-1", Date.now()]]),
+    });
+
+    await chatHandlers["chat.send"]({
+      params: {
+        sessionKey: "main",
+        message: "ping",
+        idempotencyKey: "idem-byok-scope",
+        overrides: {
+          apiKey: "sk-request",
+        },
+      },
+      respond,
+      context: context as never,
+      req: {} as never,
+      client: {
+        connect: {
+          role: "operator",
+          scopes: ["operator.write"],
+        },
+      } as never,
+      isWebchatConnect: () => false,
+    });
+
+    const [ok, payload, error] = respond.mock.calls.at(-1) ?? [];
+    expect(ok).toBe(false);
+    expect(payload).toBeUndefined();
+    expect(error).toMatchObject({
+      code: "FORBIDDEN",
+    });
+  });
+
   it("persists run-scoped abort partial with rpc metadata and idempotency", async () => {
     const { transcriptPath, sessionId } = await createTranscriptFixture("openclaw-chat-abort-run-");
     const runId = "idem-abort-run-1";

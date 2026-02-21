@@ -10,6 +10,7 @@ import {
 import type { DedupeEntry } from "./server-shared.js";
 import { formatError } from "./server-utils.js";
 import { setBroadcastHealthUpdate } from "./server/health-state.js";
+import { getEnterpriseMetricsSnapshot } from "./runtime-metrics.js";
 
 export function startGatewayMaintenanceTimers(params: {
   broadcast: (
@@ -25,6 +26,7 @@ export function startGatewayMaintenanceTimers(params: {
   getHealthVersion: () => number;
   refreshGatewayHealthSnapshot: (opts?: { probe?: boolean }) => Promise<HealthSummary>;
   logHealth: { error: (msg: string) => void };
+  logGateway?: { warn: (msg: string) => void };
   dedupe: Map<string, DedupeEntry>;
   chatAbortControllers: Map<string, ChatAbortControllerEntry>;
   chatRunState: { abortedRuns: Map<string, number> };
@@ -42,6 +44,8 @@ export function startGatewayMaintenanceTimers(params: {
   healthInterval: ReturnType<typeof setInterval>;
   dedupeCleanup: ReturnType<typeof setInterval>;
 } {
+  let previousMetrics = getEnterpriseMetricsSnapshot().counters;
+
   setBroadcastHealthUpdate((snap: HealthSummary) => {
     params.broadcast("health", snap, {
       stateVersion: {
@@ -126,6 +130,40 @@ export function startGatewayMaintenanceTimers(params: {
       params.chatRunState.abortedRuns.delete(runId);
       params.chatRunBuffers.delete(runId);
       params.chatDeltaSentAt.delete(runId);
+    }
+
+    const nextMetrics = getEnterpriseMetricsSnapshot().counters;
+    const authDeniedDelta = nextMetrics.auth_denied_total - previousMetrics.auth_denied_total;
+    const scheduleDeniedDelta =
+      nextMetrics.schedule_denied_total - previousMetrics.schedule_denied_total;
+    const resumeFailureDelta =
+      nextMetrics.workflow_resume_failures_total - previousMetrics.workflow_resume_failures_total;
+    const idempotencyFailureDelta =
+      nextMetrics.idempotency_lock_failures_total - previousMetrics.idempotency_lock_failures_total;
+    previousMetrics = nextMetrics;
+
+    if (params.logGateway) {
+      // Minimal enterprise alerting baseline. Alert windows are per 60s cleanup tick.
+      if (authDeniedDelta >= 20) {
+        params.logGateway.warn(
+          `alert auth deny spike authDeniedDelta=${authDeniedDelta} window=60s`,
+        );
+      }
+      if (scheduleDeniedDelta >= 10) {
+        params.logGateway.warn(
+          `alert scheduler deny spike scheduleDeniedDelta=${scheduleDeniedDelta} window=60s`,
+        );
+      }
+      if (resumeFailureDelta >= 5) {
+        params.logGateway.warn(
+          `alert workflow resume failures resumeFailureDelta=${resumeFailureDelta} window=60s`,
+        );
+      }
+      if (idempotencyFailureDelta > 0) {
+        params.logGateway.warn(
+          `alert idempotency/lock failures idempotencyFailureDelta=${idempotencyFailureDelta} window=60s`,
+        );
+      }
     }
   }, 60_000);
 

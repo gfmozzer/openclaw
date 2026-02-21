@@ -29,6 +29,7 @@ Troubleshooting: [/automation/troubleshooting](/automation/troubleshooting)
 - Wakeups are first-class: a job can request “wake now” vs “next heartbeat”.
 - Webhook posting is per job via `delivery.mode = "webhook"` + `delivery.to = "<url>"`.
 - Legacy fallback remains for stored jobs with `notify: true` when `cron.webhook` is set, migrate those jobs to webhook delivery mode.
+- Distributed mode: set `OPENCLAW_CRON_ORCHESTRATION_MODE=temporal` to disable the local cron engine and route cron writes through the stateless scheduler orchestrator.
 
 ## Quick start (actionable)
 

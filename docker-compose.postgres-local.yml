@@ -1,0 +1,22 @@
+services:
+  openclaw-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: openclaw-postgres-local
+    environment:
+      POSTGRES_DB: ${OPENCLAW_PG_DB:-openclaw}
+      POSTGRES_USER: ${OPENCLAW_PG_USER:-openclaw}
+      POSTGRES_PASSWORD: ${OPENCLAW_PG_PASSWORD:-openclaw_dev_password}
+    ports:
+      - "${OPENCLAW_PG_PORT:-5432}:5432"
+    volumes:
+      - openclaw_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${OPENCLAW_PG_USER:-openclaw} -d ${OPENCLAW_PG_DB:-openclaw}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  openclaw_postgres_data:
+

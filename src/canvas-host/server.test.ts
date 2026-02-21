@@ -264,8 +264,16 @@ describe("canvas host", () => {
       createdBundle = true;
     }
 
-    await fs.symlink(path.join(process.cwd(), "package.json"), linkPath);
-    createdLink = true;
+    try {
+      await fs.symlink(path.join(process.cwd(), "package.json"), linkPath);
+      createdLink = true;
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (process.platform === "win32" && err.code === "EPERM") {
+        return;
+      }
+      throw error;
+    }
 
     const server = await startCanvasHost({
       runtime: quietRuntime,

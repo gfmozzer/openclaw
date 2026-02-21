@@ -39,6 +39,22 @@ export const ChatSendParamsSchema = Type.Object(
     deliver: Type.Optional(Type.Boolean()),
     attachments: Type.Optional(Type.Array(Type.Unknown())),
     timeoutMs: Type.Optional(Type.Integer({ minimum: 0 })),
+    overrides: Type.Optional(
+      Type.Object(
+        {
+          provider: Type.Optional(Type.String({ minLength: 1, maxLength: 200 })),
+          model: Type.Optional(Type.String({ minLength: 1, maxLength: 200 })),
+          systemPrompt: Type.Optional(Type.String({ minLength: 1, maxLength: 12_000 })),
+          soul: Type.Optional(Type.String({ minLength: 1, maxLength: 12_000 })),
+          apiKey: Type.Optional(Type.String({ minLength: 1, maxLength: 8_192 })),
+          authProfileId: Type.Optional(Type.String({ minLength: 1, maxLength: 200 })),
+          skillAllowlist: Type.Optional(
+            Type.Array(Type.String({ minLength: 1, maxLength: 200 }), { maxItems: 128 }),
+          ),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     idempotencyKey: NonEmptyString,
   },
   { additionalProperties: false },

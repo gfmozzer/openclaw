@@ -64,6 +64,8 @@ export type FollowupRun = {
     model: string;
     authProfileId?: string;
     authProfileIdSource?: "auto" | "user";
+    /** Per-request BYOK override (ephemeral, never persisted). */
+    runtimeApiKey?: string;
     thinkLevel?: ThinkLevel;
     verboseLevel?: VerboseLevel;
     reasoningLevel?: ReasoningLevel;

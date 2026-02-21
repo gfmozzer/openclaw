@@ -26,29 +26,27 @@ import { initSessionState } from "./session.js";
 import { stageSandboxMedia } from "./stage-sandbox-media.js";
 import { createTypingController } from "./typing.js";
 
-function mergeSkillFilters(channelFilter?: string[], agentFilter?: string[]): string[] | undefined {
+function mergeSkillFilters(...filters: Array<string[] | undefined>): string[] | undefined {
   const normalize = (list?: string[]) => {
     if (!Array.isArray(list)) {
       return undefined;
     }
     return list.map((entry) => String(entry).trim()).filter(Boolean);
   };
-  const channel = normalize(channelFilter);
-  const agent = normalize(agentFilter);
-  if (!channel && !agent) {
+  const normalized = filters.map((filter) => normalize(filter));
+  const active = normalized.filter((filter): filter is string[] => Array.isArray(filter));
+  if (active.length === 0) {
     return undefined;
   }
-  if (!channel) {
-    return agent;
-  }
-  if (!agent) {
-    return channel;
-  }
-  if (channel.length === 0 || agent.length === 0) {
+  if (active.some((filter) => filter.length === 0)) {
     return [];
   }
-  const agentSet = new Set(agent);
-  return channel.filter((name) => agentSet.has(name));
+  let merged = active[0];
+  for (let i = 1; i < active.length; i += 1) {
+    const allowed = new Set(active[i]);
+    merged = merged.filter((name) => allowed.has(name));
+  }
+  return merged;
 }
 
 export async function getReplyFromConfig(
@@ -67,6 +65,7 @@ export async function getReplyFromConfig(
   });
   const mergedSkillFilter = mergeSkillFilters(
     opts?.skillFilter,
+    opts?.requestOverrides?.skillAllowlist,
     resolveAgentSkillsFilter(cfg, agentId),
   );
   const resolvedOpts =
@@ -79,6 +78,24 @@ export async function getReplyFromConfig(
   });
   let provider = defaultProvider;
   let model = defaultModel;
+  const requestOverrides = resolvedOpts?.requestOverrides;
+  const forcedProvider = requestOverrides?.provider?.trim();
+  const forcedModelRaw = requestOverrides?.model?.trim();
+  const forcedModelRef = forcedModelRaw
+    ? resolveModelRefFromString({
+        raw: forcedModelRaw,
+        defaultProvider,
+        aliasIndex,
+      })?.ref
+    : null;
+
+  if (forcedModelRef) {
+    provider = forcedModelRef.provider;
+    model = forcedModelRef.model;
+  } else if (forcedProvider) {
+    provider = forcedProvider;
+  }
+
   let hasResolvedHeartbeatModelOverride = false;
   if (opts?.isHeartbeat) {
     // Prefer the resolved per-agent heartbeat model passed from the heartbeat runner,
@@ -271,6 +288,14 @@ export async function getReplyFromConfig(
   } = directiveResult.result;
   provider = resolvedProvider;
   model = resolvedModel;
+
+  // Enforce per-request hard overrides after directives so request-level intent wins.
+  if (forcedModelRef) {
+    provider = forcedModelRef.provider;
+    model = forcedModelRef.model;
+  } else if (forcedProvider) {
+    provider = forcedProvider;
+  }
 
   const inlineActionResult = await handleInlineActions({
     ctx,

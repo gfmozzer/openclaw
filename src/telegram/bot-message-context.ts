@@ -32,6 +32,7 @@ import { loadConfig } from "../config/config.js";
 import { readSessionUpdatedAt, resolveStorePath } from "../config/sessions.js";
 import type { DmPolicy, TelegramGroupConfig, TelegramTopicConfig } from "../config/types.js";
 import { logVerbose, shouldLogVerbose } from "../globals.js";
+import { createTenantResolver } from "../gateway/stateless/multitenancy/index.js";
 import { recordChannelActivity } from "../infra/channel-activity.js";
 import { buildPairingReply } from "../pairing/pairing-messages.js";
 import { upsertChannelPairingRequest } from "../pairing/pairing-store.js";
@@ -157,6 +158,7 @@ export const buildTelegramMessageContext = async ({
   resolveGroupRequireMention,
   resolveTelegramGroupConfig,
 }: BuildTelegramMessageContextParams) => {
+  const tenantResolver = createTenantResolver();
   const msg = primaryCtx.message;
   recordChannelActivity({
     channel: "telegram",
@@ -690,7 +692,20 @@ export const buildTelegramMessageContext = async ({
           timestamp: entry.timestamp,
         }))
       : undefined;
+  const senderUserId = msg.from?.id != null ? String(msg.from.id) : undefined;
+  const fallbackTenantSeed = `telegram-${account.accountId}-${sessionKey}`;
+  const tenantContext = tenantResolver.resolve({
+    userId: senderUserId ?? senderUsername ?? String(chatId),
+    phoneNumber: undefined,
+    channel: "telegram",
+    accountId: route.accountId,
+    fallbackTenantId: fallbackTenantSeed,
+    requestId: options?.messageIdOverride ?? String(msg.message_id),
+  });
   const ctxPayload = finalizeInboundContext({
+    TenantId: tenantContext.tenantId,
+    TenantUserId: tenantContext.principal.userId,
+    TenantPhoneNumber: tenantContext.principal.phoneNumber,
     Body: combinedBody,
     // Agent prompt should be the raw user text only; metadata/context is provided via system prompt.
     BodyForAgent: bodyText,

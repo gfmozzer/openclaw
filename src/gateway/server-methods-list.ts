@@ -81,7 +81,14 @@ const BASE_METHODS = [
   "cron.remove",
   "cron.run",
   "cron.runs",
+  "cron.callback",
+  "cron.resume.pull",
+  "swarm.team.upsert",
+  "swarm.team.get",
+  "swarm.team.list",
+  "swarm.team.delete",
   "system-presence",
+  "system.metrics",
   "system-event",
   "send",
   "agent",
@@ -92,6 +99,8 @@ const BASE_METHODS = [
   "chat.history",
   "chat.abort",
   "chat.send",
+  "chat.portal.contract",
+  "chat.portal.stack.status",
 ];
 
 export function listGatewayMethods(): string[] {

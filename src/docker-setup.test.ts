@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { delimiter as pathDelimiter, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -63,7 +63,7 @@ function createEnv(
   overrides: Record<string, string | undefined> = {},
 ): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
-    PATH: `${sandbox.binDir}:${process.env.PATH ?? ""}`,
+    PATH: `${sandbox.binDir}${pathDelimiter}${process.env.PATH ?? ""}`,
     HOME: process.env.HOME ?? sandbox.rootDir,
     LANG: process.env.LANG,
     LC_ALL: process.env.LC_ALL,
@@ -82,6 +82,23 @@ function createEnv(
     }
   }
   return env;
+}
+
+function toBashScriptPath(filePath: string): string {
+  if (process.platform !== "win32") {
+    return filePath;
+  }
+
+  // Git Bash/MSYS can misparse backslash-based Windows paths.
+  return filePath.replaceAll("\\", "/");
+}
+
+function bashCanAccessPath(filePath: string): boolean {
+  const candidate = toBashScriptPath(filePath).replaceAll('"', '\\"');
+  const probe = spawnSync("bash", ["-lc", `test -f "${candidate}"`], {
+    stdio: "ignore",
+  });
+  return probe.status === 0;
 }
 
 function resolveBashForCompatCheck(): string | null {
@@ -114,8 +131,11 @@ describe("docker-setup.sh", () => {
     if (!sandbox) {
       throw new Error("sandbox missing");
     }
+    if (!bashCanAccessPath(sandbox.scriptPath)) {
+      return;
+    }
 
-    const result = spawnSync("bash", [sandbox.scriptPath], {
+    const result = spawnSync("bash", [toBashScriptPath(sandbox.scriptPath)], {
       cwd: sandbox.rootDir,
       env: createEnv(sandbox, {
         OPENCLAW_DOCKER_APT_PACKAGES: "ffmpeg build-essential",
@@ -141,8 +161,11 @@ describe("docker-setup.sh", () => {
     if (!sandbox) {
       throw new Error("sandbox missing");
     }
+    if (!bashCanAccessPath(sandbox.scriptPath)) {
+      return;
+    }
 
-    const result = spawnSync("bash", [sandbox.scriptPath], {
+    const result = spawnSync("bash", [toBashScriptPath(sandbox.scriptPath)], {
       cwd: sandbox.rootDir,
       env: createEnv(sandbox, {
         OPENCLAW_EXTRA_MOUNTS: "/tmp:/tmp\n  evil-service:\n    image: alpine",
@@ -159,8 +182,11 @@ describe("docker-setup.sh", () => {
     if (!sandbox) {
       throw new Error("sandbox missing");
     }
+    if (!bashCanAccessPath(sandbox.scriptPath)) {
+      return;
+    }
 
-    const result = spawnSync("bash", [sandbox.scriptPath], {
+    const result = spawnSync("bash", [toBashScriptPath(sandbox.scriptPath)], {
       cwd: sandbox.rootDir,
       env: createEnv(sandbox, {
         OPENCLAW_EXTRA_MOUNTS: "bad mount spec",
@@ -177,8 +203,11 @@ describe("docker-setup.sh", () => {
     if (!sandbox) {
       throw new Error("sandbox missing");
     }
+    if (!bashCanAccessPath(sandbox.scriptPath)) {
+      return;
+    }
 
-    const result = spawnSync("bash", [sandbox.scriptPath], {
+    const result = spawnSync("bash", [toBashScriptPath(sandbox.scriptPath)], {
       cwd: sandbox.rootDir,
       env: createEnv(sandbox, {
         OPENCLAW_HOME_VOLUME: "bad name",

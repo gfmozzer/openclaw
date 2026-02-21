@@ -269,7 +269,7 @@ export async function runAgentTurnWithFallback(params: {
               }
             })();
           }
-          const { authProfile, embeddedContext, senderContext } = buildEmbeddedRunContexts({
+          const { authProfile, runtimeApiKey, embeddedContext, senderContext } = buildEmbeddedRunContexts({
             run: params.followupRun.run,
             sessionCtx: params.sessionCtx,
             hasRepliedRef: params.opts?.hasRepliedRef,
@@ -281,6 +281,7 @@ export async function runAgentTurnWithFallback(params: {
             model,
             runId,
             authProfile,
+            runtimeApiKey,
           });
           return runEmbeddedPiAgent({
             ...embeddedContext,

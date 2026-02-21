@@ -11,6 +11,12 @@ import type { CommandArgs } from "./commands-registry.types.js";
 export type OriginatingChannelType = ChannelId | InternalMessageChannel;
 
 export type MsgContext = {
+  /** Multi-tenant principal id propagated from channel ingress. */
+  TenantId?: string;
+  /** Optional tenant-resolved user id from ingress metadata. */
+  TenantUserId?: string;
+  /** Optional tenant-resolved phone number from ingress metadata. */
+  TenantPhoneNumber?: string;
   Body?: string;
   /**
    * Agent prompt body (may include envelope/history/context). Prefer this for prompt shaping.

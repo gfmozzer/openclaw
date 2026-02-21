@@ -49,6 +49,7 @@ import { runOnboardingWizard } from "../wizard/onboarding.js";
 import { createAuthRateLimiter, type AuthRateLimiter } from "./auth-rate-limit.js";
 import { startChannelHealthMonitor } from "./channel-health-monitor.js";
 import { startGatewayConfigReloader } from "./config-reload.js";
+import { resolveCronOrchestrationMode } from "./cron-orchestration-mode.js";
 import type { ControlUiRootState } from "./control-ui.js";
 import {
   GATEWAY_EVENT_UPDATE_AVAILABLE,
@@ -81,6 +82,7 @@ import { startGatewaySidecars } from "./server-startup.js";
 import { startGatewayTailscaleExposure } from "./server-tailscale.js";
 import { createWizardSessionTracker } from "./server-wizard-sessions.js";
 import { attachGatewayWsHandlers } from "./server-ws-runtime.js";
+import { createStatelessRuntimeDeps } from "./stateless/runtime.js";
 import {
   getHealthCache,
   getHealthVersion,
@@ -352,6 +354,8 @@ export async function startGatewayServer(
   const { wizardSessions, findRunningWizard, purgeWizardSession } = createWizardSessionTracker();
 
   const deps = createDefaultDeps();
+  const statelessDeps = createStatelessRuntimeDeps();
+  const cronOrchestrationMode = resolveCronOrchestrationMode();
   let canvasHostServer: CanvasHostServer | null = null;
   const gatewayTls = await loadGatewayTlsRuntime(cfgAtStart.gateway?.tls, log.child("tls"));
   if (cfgAtStart.gateway?.tls?.enabled && !gatewayTls.enabled) {
@@ -489,6 +493,7 @@ export async function startGatewayServer(
       getHealthVersion,
       refreshGatewayHealthSnapshot,
       logHealth,
+      logGateway: log,
       dedupe,
       chatAbortControllers,
       chatRunState,
@@ -537,8 +542,10 @@ export async function startGatewayServer(
         checkIntervalMs: (healthCheckMinutes ?? 5) * 60_000,
       });
 
-  if (!minimalTestGateway) {
+  if (!minimalTestGateway && cronOrchestrationMode === "local") {
     void cron.start().catch((err) => logCron.error(`failed to start: ${String(err)}`));
+  } else if (!minimalTestGateway && cronOrchestrationMode === "temporal") {
+    logCron.info("cron engine startup skipped (OPENCLAW_CRON_ORCHESTRATION_MODE=temporal)");
   }
 
   // Recover pending outbound deliveries from previous crash/restart.
@@ -586,6 +593,11 @@ export async function startGatewayServer(
       deps,
       cron,
       cronStorePath,
+      schedulerOrchestrator: statelessDeps.schedulerOrchestrator,
+      swarmDirectoryStore: statelessDeps.swarmDirectoryStore,
+      skillLoader: statelessDeps.skillLoader,
+      toolBusDispatcher: statelessDeps.toolBusDispatcher,
+      auditEventStore: statelessDeps.auditEventStore,
       execApprovalManager,
       loadGatewayModelCatalog,
       getHealthCache,

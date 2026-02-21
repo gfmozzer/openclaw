@@ -6,11 +6,13 @@ import {
   isNodeRoleMethod,
 } from "./method-scopes.js";
 import { ErrorCodes, errorShape } from "./protocol/index.js";
+import { incrementEnterpriseMetric } from "./runtime-metrics.js";
 import { agentHandlers } from "./server-methods/agent.js";
 import { agentsHandlers } from "./server-methods/agents.js";
 import { browserHandlers } from "./server-methods/browser.js";
 import { channelsHandlers } from "./server-methods/channels.js";
 import { chatHandlers } from "./server-methods/chat.js";
+import { chatPortalHandlers } from "./server-methods/chat-portal.js";
 import { configHandlers } from "./server-methods/config.js";
 import { connectHandlers } from "./server-methods/connect.js";
 import { cronHandlers } from "./server-methods/cron.js";
@@ -24,6 +26,7 @@ import { pushHandlers } from "./server-methods/push.js";
 import { sendHandlers } from "./server-methods/send.js";
 import { sessionsHandlers } from "./server-methods/sessions.js";
 import { skillsHandlers } from "./server-methods/skills.js";
+import { swarmHandlers } from "./server-methods/swarm.js";
 import { systemHandlers } from "./server-methods/system.js";
 import { talkHandlers } from "./server-methods/talk.js";
 import { ttsHandlers } from "./server-methods/tts.js";
@@ -73,6 +76,7 @@ export const coreGatewayHandlers: GatewayRequestHandlers = {
   ...healthHandlers,
   ...channelsHandlers,
   ...chatHandlers,
+  ...chatPortalHandlers,
   ...cronHandlers,
   ...deviceHandlers,
   ...execApprovalsHandlers,
@@ -83,6 +87,7 @@ export const coreGatewayHandlers: GatewayRequestHandlers = {
   ...talkHandlers,
   ...ttsHandlers,
   ...skillsHandlers,
+  ...swarmHandlers,
   ...sessionsHandlers,
   ...systemHandlers,
   ...updateHandlers,
@@ -101,6 +106,12 @@ export async function handleGatewayRequest(
   const { req, respond, client, isWebchatConnect, context } = opts;
   const authError = authorizeGatewayMethod(req.method, client);
   if (authError) {
+    incrementEnterpriseMetric("auth_denied_total");
+    const role = client?.connect?.role ?? "unknown";
+    const scopes = Array.isArray(client?.connect?.scopes) ? client.connect.scopes.join(",") : "";
+    context.logGateway.warn(
+      `gateway auth deny method=${req.method} role=${role} scopes=${scopes || "<none>"} reason=${authError.message}`,
+    );
     respond(false, undefined, authError);
     return;
   }

@@ -322,6 +322,7 @@ export async function runEmbeddedPiAgent(
       }
 
       const authStore = ensureAuthProfileStore(agentDir, { allowKeychainPrompt: false });
+      const runtimeApiKey = params.runtimeApiKey?.trim();
       const preferredProfileId = params.authProfileId?.trim();
       let lockedProfileId = params.authProfileIdSource === "user" ? preferredProfileId : undefined;
       if (lockedProfileId) {
@@ -342,11 +343,13 @@ export async function runEmbeddedPiAgent(
       if (lockedProfileId && !profileOrder.includes(lockedProfileId)) {
         throw new Error(`Auth profile "${lockedProfileId}" is not configured for ${provider}.`);
       }
-      const profileCandidates = lockedProfileId
-        ? [lockedProfileId]
-        : profileOrder.length > 0
-          ? profileOrder
-          : [undefined];
+      const profileCandidates = runtimeApiKey
+        ? [undefined]
+        : lockedProfileId
+          ? [lockedProfileId]
+          : profileOrder.length > 0
+            ? profileOrder
+            : [undefined];
       let profileIndex = 0;
 
       const initialThinkLevel = params.thinkLevel ?? "off";
@@ -406,6 +409,26 @@ export async function runEmbeddedPiAgent(
       };
 
       const applyApiKeyInfo = async (candidate?: string): Promise<void> => {
+        if (runtimeApiKey) {
+          apiKeyInfo = {
+            apiKey: runtimeApiKey,
+            profileId: undefined,
+            source: "request-override",
+            mode: "api-key",
+          };
+          if (model.provider === "github-copilot") {
+            const { resolveCopilotApiToken } =
+              await import("../../providers/github-copilot-token.js");
+            const copilotToken = await resolveCopilotApiToken({
+              githubToken: runtimeApiKey,
+            });
+            authStorage.setRuntimeApiKey(model.provider, copilotToken.token);
+          } else {
+            authStorage.setRuntimeApiKey(model.provider, runtimeApiKey);
+          }
+          lastProfileId = undefined;
+          return;
+        }
         apiKeyInfo = await resolveApiKeyForCandidate(candidate);
         const resolvedProfileId = apiKeyInfo.profileId ?? candidate;
         if (!apiKeyInfo.apiKey) {

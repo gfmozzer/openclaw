@@ -1189,7 +1189,16 @@ describe("QmdMemoryManager", () => {
     const target = path.join(workspaceDir, "target.md");
     await fs.writeFile(target, "ok", "utf-8");
     const link = path.join(workspaceDir, "link.md");
-    await fs.symlink(target, link);
+    try {
+      await fs.symlink(target, link);
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (process.platform === "win32" && err.code === "EPERM") {
+        await manager.close();
+        return;
+      }
+      throw error;
+    }
     await expect(manager.readFile({ relPath: "qmd/workspace-main/link.md" })).rejects.toThrow(
       "path required",
     );
