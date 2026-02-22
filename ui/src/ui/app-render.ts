@@ -45,6 +45,7 @@ import { loadLogs } from "./controllers/logs.ts";
 import { loadNodes } from "./controllers/nodes.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { deleteSessionAndRefresh, loadSessions, patchSession } from "./controllers/sessions.ts";
+import { loadSystemMetrics } from "./controllers/system-metrics.ts";
 import {
   addSwarmWorker,
   deleteSwarmTeam,
@@ -53,27 +54,36 @@ import {
   resetSwarmForm,
   selectSwarmTeam,
   setSwarmFormField,
-  setSwarmIdentityField,
   updateSwarmWorkerField,
   upsertSwarmTeam,
   type SwarmWorkerForm,
 } from "./controllers/swarm.ts";
 import {
+  getSkillExternalEndpointEdit,
+  getSkillExternalPolicyEdit,
+  getSkillExternalTestPayloadEdit,
   installSkill,
   loadSkills,
   saveSkillApiKey,
+  saveSkillExternalConfig,
+  testSkillExternalEndpoint,
+  updateSkillExternalEndpointEdit,
+  updateSkillExternalPolicyEdit,
+  updateSkillExternalTestPayloadEdit,
   updateSkillEdit,
   updateSkillEnabled,
 } from "./controllers/skills.ts";
 import { icons } from "./icons.ts";
-import { normalizeBasePath, TAB_GROUPS, subtitleForTab, titleForTab } from "./navigation.ts";
+import { normalizeBasePath, subtitleForTab, tabGroupsForMode, titleForTab } from "./navigation.ts";
 import { renderAgents } from "./views/agents.ts";
 import { renderChannels } from "./views/channels.ts";
 import { renderChat } from "./views/chat.ts";
 import { renderConfig } from "./views/config.ts";
 import { renderCron } from "./views/cron.ts";
 import { renderDebug } from "./views/debug.ts";
+import { renderDocsView } from "./views/docs.ts";
 import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
+import { renderFaqView } from "./views/faq.ts";
 import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
 import { renderInstances } from "./views/instances.ts";
 import { renderLogs } from "./views/logs.ts";
@@ -100,6 +110,32 @@ function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
     return candidate;
   }
   return identity?.avatarUrl;
+}
+
+function isTemporalMode(state: AppViewState): boolean {
+  return String(state.cronStatus?.orchestrationMode ?? "")
+    .toLowerCase()
+    .includes("temporal");
+}
+
+function probeClass(state: "ok" | "error" | "skipped"): string {
+  if (state === "ok") {
+    return "pill ok";
+  }
+  if (state === "error") {
+    return "pill danger";
+  }
+  return "pill";
+}
+
+function computeStackHealthSummary(state: AppViewState): string {
+  const probes = state.portalStackStatus?.probes;
+  if (!probes) {
+    return state.portalStackLoading ? "..." : t("common.na");
+  }
+  const entries = [probes.redis, probes.s3, probes.postgres];
+  const okCount = entries.filter((entry) => entry.state === "ok").length;
+  return `${okCount}/${entries.length} ok`;
 }
 
 export function renderApp(state: AppViewState) {
@@ -131,6 +167,8 @@ export function renderApp(state: AppViewState) {
     state.agentsList?.defaultId ??
     state.agentsList?.agents?.[0]?.id ??
     null;
+  const temporalMode = isTemporalMode(state);
+  const visibleTabGroups = tabGroupsForMode(state.uiMode);
 
   return html`
     <div class="shell ${isChat ? "shell--chat" : ""} ${chatFocus ? "shell--chat-focus" : ""} ${state.settings.navCollapsed ? "shell--nav-collapsed" : ""} ${state.onboarding ? "shell--onboarding" : ""}">
@@ -160,6 +198,48 @@ export function renderApp(state: AppViewState) {
         </div>
         <div class="topbar-status">
           <div class="pill">
+            <span>${state.uiMode === "admin" ? t("topbar.admin") : t("topbar.client")}</span>
+          </div>
+          <button
+            class="btn btn--sm"
+            @click=${() =>
+              state.applySettings({
+                ...state.settings,
+                uiMode: state.uiMode === "admin" ? "client" : "admin",
+              })}
+          >
+            ${state.uiMode === "admin" ? t("topbar.switchClient") : t("topbar.switchAdmin")}
+          </button>
+          <div class="pill">
+            <span>${t("topbar.orchestration")}</span>
+            <span class="mono">${state.cronStatus?.orchestrationMode ?? t("common.na")}</span>
+          </div>
+          <div class="pill">
+            <span>${t("topbar.backend")}</span>
+            <span class="mono">${state.portalStackStatus?.statelessBackend ?? t("common.na")}</span>
+          </div>
+          ${state.portalStackStatus
+            ? html`
+                <div class=${probeClass(state.portalStackStatus.probes.redis.state)} title=${state.portalStackStatus.probes.redis.detail ?? ""}>
+                  <span>Redis</span>
+                  <span class="mono">${state.portalStackStatus.probes.redis.state}</span>
+                </div>
+                <div class=${probeClass(state.portalStackStatus.probes.s3.state)} title=${state.portalStackStatus.probes.s3.detail ?? ""}>
+                  <span>S3</span>
+                  <span class="mono">${state.portalStackStatus.probes.s3.state}</span>
+                </div>
+                <div class=${probeClass(state.portalStackStatus.probes.postgres.state)} title=${state.portalStackStatus.probes.postgres.detail ?? ""}>
+                  <span>Postgres</span>
+                  <span class="mono">${state.portalStackStatus.probes.postgres.state}</span>
+                </div>
+              `
+            : nothing}
+          ${state.portalStackError ? html`<div class="pill danger">${state.portalStackError}</div>` : nothing}
+          <div class="pill">
+            <span>${t("topbar.stack")}</span>
+            <span class="mono">${computeStackHealthSummary(state)}</span>
+          </div>
+          <div class="pill">
             <span class="statusDot ${state.connected ? "ok" : ""}"></span>
             <span>${t("common.health")}</span>
             <span class="mono">${state.connected ? t("common.ok") : t("common.offline")}</span>
@@ -168,7 +248,7 @@ export function renderApp(state: AppViewState) {
         </div>
       </header>
       <aside class="nav ${state.settings.navCollapsed ? "nav--collapsed" : ""}">
-        ${TAB_GROUPS.map((group) => {
+        ${visibleTabGroups.map((group) => {
           const isGroupCollapsed = state.settings.navGroupsCollapsed[group.label] ?? false;
           const hasActiveTab = group.tabs.some((tab) => tab === state.tab);
           return html`
@@ -228,8 +308,12 @@ export function renderApp(state: AppViewState) {
         }
         <section class="content-header">
           <div>
-            ${state.tab === "usage" ? nothing : html`<div class="page-title">${titleForTab(state.tab)}</div>`}
-            ${state.tab === "usage" ? nothing : html`<div class="page-sub">${subtitleForTab(state.tab)}</div>`}
+            ${state.tab === "usage"
+              ? nothing
+              : html`<div class="page-title">${titleForTab(state.tab, { temporalMode })}</div>`}
+            ${state.tab === "usage"
+              ? nothing
+              : html`<div class="page-sub">${subtitleForTab(state.tab, { temporalMode })}</div>`}
           </div>
           <div class="page-meta">
             ${state.lastError ? html`<div class="pill danger">${state.lastError}</div>` : nothing}
@@ -307,6 +391,9 @@ export function renderApp(state: AppViewState) {
               })
             : nothing
         }
+
+        ${state.tab === "docs" ? renderDocsView({ basePath: state.basePath }) : nothing}
+        ${state.tab === "faq" ? renderFaqView() : nothing}
 
         ${
           state.tab === "instances"
@@ -410,13 +497,15 @@ export function renderApp(state: AppViewState) {
                 agentSkillsError: state.agentSkillsError,
                 agentSkillsAgentId: state.agentSkillsAgentId,
                 skillsFilter: state.skillsFilter,
+                metricsLoading: state.enterpriseMetricsLoading,
+                metricsError: state.enterpriseMetricsError,
+                metricsSnapshot: state.enterpriseMetrics,
                 swarmLoading: state.swarmLoading,
                 swarmSaving: state.swarmSaving,
                 swarmError: state.swarmError,
                 swarmTeams: state.swarmTeams,
                 swarmSelectedTeamId: state.swarmSelectedTeamId,
                 swarmForm: state.swarmForm,
-                swarmIdentity: state.swarmIdentity,
                 onRefresh: async () => {
                   await loadAgents(state);
                   const agentIds = state.agentsList?.agents?.map((entry) => entry.id) ?? [];
@@ -462,10 +551,23 @@ export function renderApp(state: AppViewState) {
                       void loadAgentFiles(state, resolvedAgentId);
                     }
                   }
+                  if (panel === "memory" && resolvedAgentId) {
+                    if (state.agentFilesList?.agentId !== resolvedAgentId) {
+                      state.agentFilesList = null;
+                      state.agentFilesError = null;
+                      state.agentFileActive = null;
+                      state.agentFileContents = {};
+                      state.agentFileDrafts = {};
+                      void loadAgentFiles(state, resolvedAgentId);
+                    }
+                  }
                   if (panel === "skills") {
                     if (resolvedAgentId) {
                       void loadAgentSkills(state, resolvedAgentId);
                     }
+                  }
+                  if (panel === "metrics") {
+                    void loadSystemMetrics(state);
                   }
                   if (panel === "channels") {
                     void loadChannels(state, false);
@@ -565,6 +667,7 @@ export function renderApp(state: AppViewState) {
                 onConfigSave: () => saveConfig(state),
                 onChannelsRefresh: () => loadChannels(state, false),
                 onCronRefresh: () => state.loadCron(),
+                onMetricsRefresh: () => loadSystemMetrics(state),
                 onSkillsFilterChange: (next) => (state.skillsFilter = next),
                 onSkillsRefresh: () => {
                   if (resolvedAgentId) {
@@ -655,9 +758,6 @@ export function renderApp(state: AppViewState) {
                 },
                 onSwarmSelectTeam: (teamId) => {
                   selectSwarmTeam(state, teamId, resolvedAgentId ?? "");
-                },
-                onSwarmIdentityChange: (key, value) => {
-                  setSwarmIdentityField(state, key, value);
                 },
                 onSwarmFormChange: (key, value) => {
                   setSwarmFormField(state, key, value);
@@ -780,12 +880,24 @@ export function renderApp(state: AppViewState) {
                 filter: state.skillsFilter,
                 edits: state.skillEdits,
                 messages: state.skillMessages,
+                testResults: state.skillTestResults,
                 busyKey: state.skillsBusyKey,
                 onFilterChange: (next) => (state.skillsFilter = next),
                 onRefresh: () => loadSkills(state, { clearMessages: true }),
                 onToggle: (key, enabled) => updateSkillEnabled(state, key, enabled),
                 onEdit: (key, value) => updateSkillEdit(state, key, value),
                 onSaveKey: (key) => saveSkillApiKey(state, key),
+                onExternalEndpointEdit: (key, value) =>
+                  updateSkillExternalEndpointEdit(state, key, value),
+                onExternalPolicyEdit: (key, value) =>
+                  updateSkillExternalPolicyEdit(state, key, value),
+                onExternalTestPayloadEdit: (key, value) =>
+                  updateSkillExternalTestPayloadEdit(state, key, value),
+                onExternalSave: (key) => saveSkillExternalConfig(state, key),
+                onExternalTest: (key) => testSkillExternalEndpoint(state, key),
+                externalEndpointValue: (key) => getSkillExternalEndpointEdit(state, key),
+                externalPolicyValue: (key) => getSkillExternalPolicyEdit(state, key),
+                externalTestPayloadValue: (key) => getSkillExternalTestPayloadEdit(state, key),
                 onInstall: (skillKey, name, installId) =>
                   installSkill(state, skillKey, name, installId),
               })
@@ -912,6 +1024,9 @@ export function renderApp(state: AppViewState) {
                 disabledReason: chatDisabledReason,
                 error: state.lastError,
                 sessions: state.sessionsResult,
+                portalContract: state.portalContract,
+                portalContractError: state.portalContractError,
+                callerScopes: state.hello?.auth?.scopes ?? [],
                 focusMode: chatFocus,
                 onRefresh: () => {
                   state.resetToolStream();
@@ -935,6 +1050,14 @@ export function renderApp(state: AppViewState) {
                 onAbort: () => void state.handleAbortChat(),
                 onQueueRemove: (id) => state.removeQueuedMessage(id),
                 onNewSession: () => state.handleSendChat("/new", { restoreDraft: true }),
+                onPortalAction: (payload, label) => {
+                  const actionPayload =
+                    payload && typeof payload === "object"
+                      ? JSON.stringify(payload)
+                      : String(payload ?? "");
+                  const message = `/action ${label ?? "run"}\n${actionPayload}`;
+                  void state.handleSendChat(message, { restoreDraft: true });
+                },
                 showNewMessages: state.chatNewMessagesBelow && !state.chatManualRefreshInFlight,
                 onScrollToBottom: () => state.scrollToBottom(),
                 // Sidebar props for tool output viewing

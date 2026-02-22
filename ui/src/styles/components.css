@@ -236,6 +236,12 @@
   color: var(--danger);
 }
 
+.pill.ok {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: var(--ok-subtle);
+  color: var(--ok);
+}
+
 /* ===========================================
    Theme Toggle
    =========================================== */

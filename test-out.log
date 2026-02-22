@@ -1,0 +1,517 @@
+npm warn Unknown project config "allow-build-scripts". This will stop working in the next major version of npm.
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/gfmoz/Documentos/apps_projects/openclaw[39m
+
+ [31mÔØ»[39m src/auto-reply/reply/reply-flow.test.ts [2m([22m[2m80 tests[22m[2m | [22m[31m10 failed[39m[2m)[22m[33m 720039[2mms[22m[39m
+     [32mÔ£ô[39m converts CRLF to LF[32m 1[2mms[22m[39m
+     [32mÔ£ô[39m converts CR to LF[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m preserves literal backslash-n sequences in Windows paths[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m preserves backslash-n in messages containing Windows paths[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m preserves multiple backslash-n sequences[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m still normalizes actual CRLF while preserving backslash-n[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m whatsapp group[32m 1[2mms[22m[39m
+     [32mÔ£ô[39m telegram group[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m slack channel[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m discord channel[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m signal dm[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m imessage group[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m matrix channel[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m msteams channel[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m zalo dm[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m zalouser group[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects quick_replies directive[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects location directive[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects confirm directive[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects buttons directive[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m returns false for regular text[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m returns false for similar but invalid patterns[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects media_player directive[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects event directive[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects agenda directive[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects device directive[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m detects appletv_remote directive[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses quick_replies and removes from text[32m 1[2mms[22m[39m
+       [32mÔ£ô[39m handles quick_replies in middle of text[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m merges with existing quickReplies[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses location with all fields[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m ignores invalid coordinates[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m does not override existing location[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses simple confirm[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses confirm with custom data[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses buttons with message actions[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses buttons with uri actions[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses buttons with postback actions[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m limits to 4 actions[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses media_player with all fields[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses media_player with minimal fields[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m handles paused status[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses event with all fields[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses event with minimal fields[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses agenda with multiple events[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses agenda with events without times[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses device with controls[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses device with minimal fields[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses appletv_remote with status[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m parses appletv_remote with minimal fields[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m handles text with no directives[32m 0[2mms[22m[39m
+       [32mÔ£ô[39m preserves other payload fields[32m 0[2mms[22m[39m
+[31m     [31m├ù[31m deduplicates messages with same Discord message_id[39m[32m 4[2mms[22m[39m
+[31m     [31m├ù[31m deduplicates exact prompt when routing matches and no message id[39m[32m 0[2mms[22m[39m
+[31m     [31m├ù[31m does not deduplicate across different providers without message id[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m can opt-in to prompt-based dedupe when message id is absent[39m[32m 0[2mms[22m[39m
+[31m     [31m├ù[31m does not collect when destinations differ[39m[33m 120003[2mms[22m[39m
+[31m     [31m├ù[31m collects when channel+destination match[39m[33m 120003[2mms[22m[39m
+[31m     [31m├ù[31m collects Slack messages in same thread and preserves string thread id[39m[33m 120004[2mms[22m[39m
+[31m     [31m├ù[31m does not collect Slack messages when thread ids differ[39m[33m 120000[2mms[22m[39m
+[31m     [31m├ù[31m retries collect-mode batches without losing queued items[39m[33m 120002[2mms[22m[39m
+[31m     [31m├ù[31m retries overflow summary delivery without losing dropped previews[39m[33m 120002[2mms[22m[39m
+     [32mÔ£ô[39m drops empty payloads and silent tokens without media[32m 1[2mms[22m[39m
+     [32mÔ£ô[39m strips heartbeat tokens and applies responsePrefix[32m 1[2mms[22m[39m
+     [32mÔ£ô[39m avoids double-prefixing and keeps media when heartbeat is the only text[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m preserves ordering across tool, block, and final replies[32m 1[2mms[22m[39m
+     [32mÔ£ô[39m fires onIdle when the queue drains[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m delays block replies after the first when humanDelay is natural[32m 3[2mms[22m[39m
+     [32mÔ£ô[39m uses custom bounds for humanDelay and clamps when max <= min[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m defaults to off for Telegram[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m defaults to off for Discord and Slack[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m defaults to all when channel is unknown[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m uses configured value when present[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m uses chat-type replyToMode overrides for Slack when configured[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m falls back to top-level replyToMode when no chat-type override is set[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m uses legacy dm.replyToMode for direct messages when no chat-type override exists[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m drops replyToId when mode is off[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m keeps replyToId when mode is off and reply tags are allowed[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m keeps replyToId when mode is all[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m keeps only the first replyToId when mode is first[32m 0[2mms[22m[39m
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» Failed Tests 10 ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue deduplication > deduplicates messages with same Discord message_id
+AssertionError: expected Promise{ÔÇª} to be true // Object.is equality
+
+- Expected: 
+true
+
++ Received: 
+Promise {}
+
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:688:19
+    686|       settings,
+    687|     );
+    688|     expect(first).toBe(true);
+       |                   ^
+    689| 
+    690|     // Second enqueue with same message id should be deduplicated
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue deduplication > deduplicates exact prompt when routing matches and no message id
+AssertionError: expected Promise{ÔÇª} to be true // Object.is equality
+
+- Expected: 
+true
+
++ Received: 
+Promise {}
+
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:741:19
+    739|       settings,
+    740|     );
+    741|     expect(first).toBe(true);
+       |                   ^
+    742| 
+    743|     // Second enqueue with same prompt should be allowed (default deduÔÇª
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[2/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue deduplication > does not deduplicate across different providers without message id
+AssertionError: expected Promise{ÔÇª} to be true // Object.is equality
+
+- Expected: 
+true
+
++ Received: 
+Promise {}
+
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:786:19
+    784|       settings,
+    785|     );
+    786|     expect(first).toBe(true);
+       |                   ^
+    787| 
+    788|     const second = await enqueueFollowupRun(
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[3/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue deduplication > can opt-in to prompt-based dedupe when message id is absent
+AssertionError: expected Promise{ÔÇª} to be true // Object.is equality
+
+- Expected: 
+true
+
++ Received: 
+Promise {}
+
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:819:19
+    817|       "prompt",
+    818|     );
+    819|     expect(first).toBe(true);
+       |                   ^
+    820| 
+    821|     const second = await enqueueFollowupRun(
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[4/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue collect routing > does not collect when destinations differ
+Error: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:836:3
+    834| 
+    835| describe("followup queue collect routing", () => {
+    836|   it("does not collect when destinations differ", async () => {
+       |   ^
+    837|     const key = `test-collect-diff-to-${Date.now()}`;
+    838|     const calls: FollowupRun[] = [];
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[5/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue collect routing > collects when channel+destination match
+Error: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:879:3
+    877|   });
+    878| 
+    879|   it("collects when channel+destination match", async () => {
+       |   ^
+    880|     const key = `test-collect-same-to-${Date.now()}`;
+    881|     const calls: FollowupRun[] = [];
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[6/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue collect routing > collects Slack messages in same thread and preserves string thread id
+Error: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:923:3
+    921|   });
+    922| 
+    923|   it("collects Slack messages in same thread and preserves string threÔÇª
+       |   ^
+    924|     const key = `test-collect-slack-thread-same-${Date.now()}`;
+    925|     const calls: FollowupRun[] = [];
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[7/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue collect routing > does not collect Slack messages when thread ids differ
+Error: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:968:3
+    966|   });
+    967| 
+    968|   it("does not collect Slack messages when thread ids differ", async (ÔÇª
+       |   ^
+    969|     const key = `test-collect-slack-thread-diff-${Date.now()}`;
+    970|     const calls: FollowupRun[] = [];
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[8/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue collect routing > retries collect-mode batches without losing queued items
+Error: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:1015:3
+    1013|   });
+    1014| 
+    1015|   it("retries collect-mode batches without losing queued items", asyncÔÇª
+       |   ^
+    1016|     const key = `test-collect-retry-${Date.now()}`;
+    1017|     const calls: FollowupRun[] = [];
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[9/10]ÔÄ»
+
+ FAIL  src/auto-reply/reply/reply-flow.test.ts > followup queue collect routing > retries overflow summary delivery without losing dropped previews
+Error: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ÔØ» src/auto-reply/reply/reply-flow.test.ts:1047:3
+    1045|   });
+    1046| 
+    1047|   it("retries overflow summary delivery without losing dropped previewÔÇª
+       |   ^
+    1048|     const key = `test-overflow-summary-retry-${Date.now()}`;
+    1049|     const calls: FollowupRun[] = [];
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[10/10]ÔÄ»
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Errors ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+Vitest caught 16 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+ ÔØ» processTicksAndRejections node:internal/process/task_queues:105:5
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "does not collect when destinations differ". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+ ÔØ» processTicksAndRejections node:internal/process/task_queues:105:5
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "does not collect when destinations differ". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+ ÔØ» processTicksAndRejections node:internal/process/task_queues:105:5
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "does not collect when destinations differ". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+ ÔØ» processTicksAndRejections node:internal/process/task_queues:105:5
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "does not collect when destinations differ". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+ ÔØ» processTicksAndRejections node:internal/process/task_queues:105:5
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "does not collect when destinations differ". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+ ÔØ» processTicksAndRejections node:internal/process/task_queues:105:5
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "does not collect when destinations differ". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "collects when channel+destination match". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "collects when channel+destination match". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "collects Slack messages in same thread and preserves string thread id". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "collects Slack messages in same thread and preserves string thread id". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "does not collect Slack messages when thread ids differ". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "does not collect Slack messages when thread ids differ". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "retries collect-mode batches without losing queued items". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "retries collect-mode batches without losing queued items". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "retries overflow summary delivery without losing dropped previews". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ» Unhandled Rejection ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+TypeError: redis.setex is not a function
+ ÔØ» saveFollowupQueueState src/auto-reply/reply/queue/state.ts:70:15
+     68|   const redis = getRedisClient();
+     69|   // Ephemeral state, let's give it a generous TTL of 1 hour just in cÔÇª
+     70|   await redis.setex(getStateKey(key), 3600, JSON.stringify(state));
+       |               ^
+     71| }
+     72| 
+ ÔØ» Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:59:9
+
+This error originated in "src/auto-reply/reply/reply-flow.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "retries overflow summary delivery without losing dropped previews". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m10 failed[39m[22m[2m | [22m[1m[32m70 passed[39m[22m[90m (80)[39m
+[2m     Errors [22m [1m[31m16 errors[39m[22m
+[2m   Start at [22m 21:46:24
+[2m   Duration [22m 736.56s[2m (transform 4.39s, setup 255ms, import 16.16s, tests 720.04s, environment 0ms)[22m
+

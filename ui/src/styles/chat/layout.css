@@ -16,6 +16,159 @@
   box-shadow: none !important;
 }
 
+.chat::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 52%),
+    radial-gradient(90% 75% at 100% 100%, color-mix(in oklab, var(--accent-2) 22%, transparent), transparent 58%),
+    linear-gradient(180deg, color-mix(in oklab, var(--bg-elevated) 90%, transparent), color-mix(in oklab, var(--bg) 94%, transparent));
+  border: 1px solid color-mix(in oklab, var(--border) 78%, transparent);
+  pointer-events: none;
+}
+
+.chat > * {
+  position: relative;
+  z-index: 1;
+}
+
+.chat-portal-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--panel) 82%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 75%, transparent);
+  box-shadow: var(--shadow-md);
+}
+
+.chat-portal-hero__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.chat-portal-hero__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.chat-portal-hero__avatar--fallback {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--accent-foreground);
+  background: linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent) 58%, #fff));
+}
+
+.chat-portal-hero__meta {
+  min-width: 0;
+}
+
+.chat-portal-hero__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-strong);
+}
+
+.chat-portal-hero__title svg {
+  width: 15px;
+  height: 15px;
+}
+
+.chat-portal-hero__subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-portal-hero__badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chat-portal-hero__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  background: color-mix(in oklab, var(--panel-strong) 85%, transparent);
+}
+
+.chat-portal-hero__status svg {
+  width: 12px;
+  height: 12px;
+}
+
+.chat-portal-hero__status--online {
+  color: var(--ok);
+  border-color: color-mix(in oklab, var(--ok) 55%, var(--border));
+  background: color-mix(in oklab, var(--ok-subtle) 70%, transparent);
+}
+
+.chat-portal-hero__status--offline {
+  color: var(--danger);
+  border-color: color-mix(in oklab, var(--danger) 55%, var(--border));
+  background: color-mix(in oklab, var(--danger-subtle) 70%, transparent);
+}
+
+.chat-portal-hero__status--busy {
+  color: var(--warn);
+  border-color: color-mix(in oklab, var(--warn) 55%, var(--border));
+  background: color-mix(in oklab, var(--warn-subtle) 70%, transparent);
+}
+
+.chat-portal-hero__status--busy svg {
+  animation: spin 1.1s linear infinite;
+}
+
+.chat-portal-hero__status--waiting {
+  color: var(--info);
+  border-color: color-mix(in oklab, var(--info) 55%, var(--border));
+  background: color-mix(in oklab, var(--info) 18%, transparent);
+}
+
+.chat-portal-hero__status--ready {
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 52%, var(--border));
+  background: color-mix(in oklab, var(--accent-subtle) 70%, transparent);
+}
+
+.chat-portal-hero__status--session code {
+  font-size: 10px;
+  color: var(--text-strong);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Chat header - fixed at top, transparent */
 .chat-header {
   display: flex;
@@ -148,7 +301,7 @@
   gap: 12px;
   margin-top: auto; /* Push to bottom of flex container */
   padding: 12px 4px 4px;
-  background: linear-gradient(to bottom, transparent, var(--bg) 20%);
+  background: linear-gradient(to bottom, transparent, color-mix(in oklab, var(--bg) 92%, transparent) 18%);
   z-index: 10;
 }
 
@@ -290,13 +443,20 @@
   min-height: 40px;
   max-height: 150px;
   padding: 9px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow-y: auto;
   resize: none;
   white-space: pre-wrap;
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.45;
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  background: color-mix(in oklab, var(--panel) 88%, transparent);
+}
+
+.chat-compose .chat-compose__field textarea:focus-visible {
+  border-color: color-mix(in oklab, var(--accent) 70%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 24%, transparent);
 }
 
 .chat-compose__field textarea:disabled {

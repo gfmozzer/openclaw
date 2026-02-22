@@ -1,0 +1,14 @@
+npm warn Unknown project config "allow-build-scripts". This will stop working in the next major version of npm.
+src/agents/tools/session-status-tool.ts(339,37): error TS2554: Expected 2 arguments, but got 1.
+src/agents/tools/session-status-tool.ts(378,11): error TS2322: Type 'number | Promise<number>' is not assignable to type 'number | undefined'.
+  Type 'Promise<number>' is not assignable to type 'number'.
+src/auto-reply/reply.triggers.trigger-handling.targets-active-session-native-stop.e2e.test.ts(71,14): error TS2554: Expected 2 arguments, but got 1.
+src/auto-reply/reply.triggers.trigger-handling.targets-active-session-native-stop.e2e.test.ts(95,14): error TS2554: Expected 2 arguments, but got 1.
+src/auto-reply/reply/abort.test.ts(203,12): error TS2554: Expected 2 arguments, but got 1.
+src/auto-reply/reply/abort.test.ts(213,12): error TS2554: Expected 2 arguments, but got 1.
+src/auto-reply/reply/agent-runner-helpers.test.ts(98,53): error TS2554: Expected 2 arguments, but got 3.
+src/auto-reply/reply/agent-runner-helpers.ts(5,10): error TS2305: Module '"./queue.js"' has no exported member 'scheduleFollowupDrain'.
+src/auto-reply/reply/commands-status.ts(113,33): error TS2554: Expected 2 arguments, but got 1.
+src/auto-reply/reply/commands-status.ts(191,7): error TS2322: Type 'number | Promise<number>' is not assignable to type 'number | undefined'.
+  Type 'Promise<number>' is not assignable to type 'number'.
+src/auto-reply/reply/queue/cleanup.ts(3,10): error TS2724: '"./state.js"' has no exported member named 'clearFollowupQueue'. Did you mean 'clearFollowupQueueState'?

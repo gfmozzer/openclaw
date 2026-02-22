@@ -6,10 +6,12 @@ import {
   renderReadingIndicatorGroup,
   renderStreamingGroup,
 } from "../chat/grouped-render.ts";
+import { extractTextCached } from "../chat/message-extract.ts";
 import { normalizeMessage, normalizeRoleForGrouping } from "../chat/message-normalizer.ts";
 import { icons } from "../icons.ts";
 import { detectTextDirection } from "../text-direction.ts";
 import type { SessionsListResult } from "../types.ts";
+import type { PortalContract } from "../types.ts";
 import type { ChatItem, MessageGroup } from "../types/chat-types.ts";
 import type { ChatAttachment, ChatQueueItem } from "../ui-types.ts";
 import { renderMarkdownSidebar } from "./markdown-sidebar.ts";
@@ -53,6 +55,9 @@ export type ChatProps = {
   disabledReason: string | null;
   error: string | null;
   sessions: SessionsListResult | null;
+  portalContract: PortalContract | null;
+  portalContractError: string | null;
+  callerScopes: string[];
   // Focus mode
   focusMode: boolean;
   // Sidebar state
@@ -76,6 +81,7 @@ export type ChatProps = {
   onAbort?: () => void;
   onQueueRemove: (id: string) => void;
   onNewSession: () => void;
+  onPortalAction?: (payload: unknown, label?: string) => void;
   onOpenSidebar?: (content: string) => void;
   onCloseSidebar?: () => void;
   onSplitRatioChange?: (ratio: number) => void;
@@ -237,6 +243,60 @@ function renderAttachmentPreview(props: ChatProps) {
   `;
 }
 
+function resolveAsyncRunState(props: ChatProps): { label: string; className: string } {
+  if (props.stream !== null || props.sending) {
+    return {
+      label: "Processando",
+      className: "chat-portal-hero__status--busy",
+    };
+  }
+  const history = Array.isArray(props.messages) ? props.messages : [];
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const message = history[i] as Record<string, unknown>;
+    const role = typeof message.role === "string" ? message.role.toLowerCase() : "";
+    if (role !== "assistant") {
+      continue;
+    }
+    const text = (extractTextCached(history[i]) ?? "").toLowerCase();
+    if (/job agendado|agendad[oa]|queued|enqueued|workflow iniciado/.test(text)) {
+      return {
+        label: "Job agendado",
+        className: "chat-portal-hero__status--waiting",
+      };
+    }
+    if (/correlation|callback|workflow|aguardando|resume|retorno ass[ií]ncrono/.test(text)) {
+      return {
+        label: "Aguardando callback",
+        className: "chat-portal-hero__status--waiting",
+      };
+    }
+    if (/resultado|conclu[ií]do|finalizado|completed|succeeded/.test(text)) {
+      return {
+        label: "Resultado pronto",
+        className: "chat-portal-hero__status--ready",
+      };
+    }
+    break;
+  }
+  return {
+    label: "Pronto",
+    className: "chat-portal-hero__status--ready",
+  };
+}
+
+function resolveLastCorrelationId(messages: unknown[]): string | null {
+  const pattern =
+    /(correlation(?:id)?|workflowId|runId|jobId)\s*[:=]\s*([a-zA-Z0-9._:-]{6,})/i;
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const text = extractTextCached(messages[i]) ?? "";
+    const match = pattern.exec(text);
+    if (match?.[2]) {
+      return match[2];
+    }
+  }
+  return null;
+}
+
 export function renderChat(props: ChatProps) {
   const canCompose = props.connected;
   const isBusy = props.sending || props.stream !== null;
@@ -250,6 +310,9 @@ export function renderChat(props: ChatProps) {
   };
 
   const hasAttachments = (props.attachments?.length ?? 0) > 0;
+  const onlineStatusClass = props.connected ? "chat-portal-hero__status--online" : "chat-portal-hero__status--offline";
+  const asyncState = resolveAsyncRunState(props);
+  const correlationId = resolveLastCorrelationId(Array.isArray(props.messages) ? props.messages : []);
   const composePlaceholder = props.connected
     ? hasAttachments
       ? "Add a message or paste more images..."
@@ -305,6 +368,9 @@ export function renderChat(props: ChatProps) {
               showReasoning,
               assistantName: props.assistantName,
               assistantAvatar: assistantIdentity.avatar,
+              portalContract: props.portalContract,
+              callerScopes: props.callerScopes,
+              onPortalAction: props.onPortalAction,
             });
           }
 
@@ -319,6 +385,31 @@ export function renderChat(props: ChatProps) {
       ${props.disabledReason ? html`<div class="callout">${props.disabledReason}</div>` : nothing}
 
       ${props.error ? html`<div class="callout danger">${props.error}</div>` : nothing}
+      ${props.portalContractError
+        ? html`<div class="callout info">Portal contract unavailable: ${props.portalContractError}</div>`
+        : nothing}
+
+      <div class="chat-portal-hero">
+        <div class="chat-portal-hero__identity">
+          ${
+            assistantIdentity.avatar
+              ? html`<img class="chat-portal-hero__avatar" src=${assistantIdentity.avatar} alt=${`Avatar de ${props.assistantName}`} />`
+              : html`<div class="chat-portal-hero__avatar chat-portal-hero__avatar--fallback">${props.assistantName.slice(0, 2).toUpperCase()}</div>`
+          }
+          <div class="chat-portal-hero__meta">
+            <div class="chat-portal-hero__title">${icons.messageSquare} Portal de Atendimento</div>
+            <div class="chat-portal-hero__subtitle">${props.assistantName} ativo para operacoes e suporte</div>
+          </div>
+        </div>
+        <div class="chat-portal-hero__badges">
+          <span class=${`chat-portal-hero__status ${onlineStatusClass}`}>${icons.circle} ${props.connected ? "Conectado" : "Desconectado"}</span>
+          <span class=${`chat-portal-hero__status ${asyncState.className}`}>${icons.loader} ${asyncState.label}</span>
+          ${correlationId
+            ? html`<span class="chat-portal-hero__status chat-portal-hero__status--session">Correlation: <code>${correlationId}</code></span>`
+            : nothing}
+          <span class="chat-portal-hero__status chat-portal-hero__status--session">Sessao: <code>${props.sessionKey}</code></span>
+        </div>
+      </div>
 
       ${
         props.focusMode

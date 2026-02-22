@@ -3,18 +3,25 @@ import { InMemorySwarmDirectoryStore } from "../stateless/adapters/in-memory/in-
 import { swarmHandlers } from "./swarm.js";
 import type { GatewayRequestContext } from "./types.js";
 
-function createContext(): GatewayRequestContext {
+function createContext(overrides?: Partial<GatewayRequestContext>): GatewayRequestContext {
   return {
     swarmDirectoryStore: new InMemorySwarmDirectoryStore(),
+    enterprisePrincipal: {
+      tenantId: "tenant-a",
+      requesterId: "req-1",
+      role: "admin",
+      scopes: ["swarm:read", "swarm:write"],
+    },
+    ...overrides,
   } as unknown as GatewayRequestContext;
 }
 
-function validIdentity() {
+function forgedIdentity() {
   return {
-    tenantId: "tenant-a",
-    requesterId: "req-1",
-    role: "admin",
-    scopes: ["swarm:read", "swarm:write"],
+    tenantId: "tenant-b",
+    requesterId: "forged-req",
+    role: "worker",
+    scopes: [],
   };
 }
 
@@ -24,7 +31,7 @@ describe("swarm handlers", () => {
     const respondUpsert = vi.fn();
     await swarmHandlers["swarm.team.upsert"]({
       params: {
-        identity: validIdentity(),
+        identity: forgedIdentity(),
         team: {
           teamId: "sales",
           supervisorAgentId: "supervisor-1",
@@ -50,7 +57,7 @@ describe("swarm handlers", () => {
     const respondGet = vi.fn();
     await swarmHandlers["swarm.team.get"]({
       params: {
-        identity: validIdentity(),
+        identity: forgedIdentity(),
         teamId: "sales",
       },
       respond: respondGet,
@@ -72,16 +79,18 @@ describe("swarm handlers", () => {
   });
 
   it("denies write when missing scope", async () => {
-    const context = createContext();
+    const context = createContext({
+      enterprisePrincipal: {
+        tenantId: "tenant-a",
+        requesterId: "req-1",
+        role: "worker",
+        scopes: ["swarm:read"],
+      },
+    });
     const respond = vi.fn();
     await swarmHandlers["swarm.team.upsert"]({
       params: {
-        identity: {
-          tenantId: "tenant-a",
-          requesterId: "req-1",
-          role: "worker",
-          scopes: ["swarm:read"],
-        },
+        identity: forgedIdentity(),
         team: {
           teamId: "sales",
           supervisorAgentId: "supervisor-1",
@@ -101,5 +110,22 @@ describe("swarm handlers", () => {
       expect.objectContaining({ code: "FORBIDDEN" }),
     );
   });
-});
 
+  it("rejects requests without authenticated principal", async () => {
+    const context = createContext({ enterprisePrincipal: undefined });
+    const respond = vi.fn();
+    await swarmHandlers["swarm.team.list"]({
+      params: { tenantId: "tenant-a" },
+      respond,
+      context,
+      client: null,
+      req: { type: "req", id: "4", method: "swarm.team.list" },
+      isWebchatConnect: () => false,
+    });
+    expect(respond).toHaveBeenCalledWith(
+      false,
+      undefined,
+      expect.objectContaining({ code: "INVALID_REQUEST" }),
+    );
+  });
+});

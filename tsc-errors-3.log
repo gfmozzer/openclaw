@@ -1,0 +1,5 @@
+npm warn Unknown project config "allow-build-scripts". This will stop working in the next major version of npm.
+ui/src/ui/views/chat.test.ts(17,3): error TS2322: Type '{ sessionKey: string; onSessionKeyChange: (next: string) => void; thinkingLevel: string | null; showThinking: boolean; loading: boolean; sending: boolean; canAbort: boolean; compactionStatus: CompactionIndicatorStatus | null; ... 38 more ...; onChatScroll?: ((event: Event) => void) | undefined; }' is not assignable to type 'ChatProps'.
+  Types of property 'portalContract' are incompatible.
+    Type 'PortalContract | null | undefined' is not assignable to type 'PortalContract | null'.
+      Type 'undefined' is not assignable to type 'PortalContract | null'.

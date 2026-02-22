@@ -5,6 +5,8 @@ import { type ChannelId, listChannelPlugins } from "../channels/plugins/index.js
 import { stopGmailWatcher } from "../hooks/gmail-watcher.js";
 import type { HeartbeatRunner } from "../infra/heartbeat-runner.js";
 import type { PluginServicesHandle } from "../plugins/services.js";
+import { unsubscribeHeartbeatWake } from "../infra/heartbeat-wake-redis.js";
+import { closeRedisClient } from "./stateless/adapters/redis/index.js";
 
 export function createGatewayCloseHandler(params: {
   bonjourStop: (() => Promise<void>) | null;
@@ -69,6 +71,11 @@ export function createGatewayCloseHandler(params: {
     }
     await stopGmailWatcher();
     params.cron.stop();
+    // Close the heartbeat Pub/Sub subscriber before the main Redis client.
+    await unsubscribeHeartbeatWake().catch(() => { /* ignore */ });
+    // Close the BullMQ/ioredis connection after the cron stops so no new jobs can be enqueued.
+    // Workers close before the ioredis client so in-flight BullMQ jobs are not abandoned mid-run.
+    await closeRedisClient().catch(() => { /* ignore — Redis may not be configured */ });
     params.heartbeatRunner.stop();
     for (const timer of params.nodePresenceTimers.values()) {
       clearInterval(timer);

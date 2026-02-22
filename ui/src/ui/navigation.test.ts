@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  fallbackTabForMode,
+  isTabVisibleForMode,
   TAB_GROUPS,
   iconForTab,
   inferBasePathFromPathname,
   normalizeBasePath,
   normalizePath,
   pathForTab,
+  resolveTabForMode,
   subtitleForTab,
+  tabGroupsForMode,
   tabFromPath,
   titleForTab,
   type Tab,
@@ -32,6 +36,8 @@ describe("iconForTab", () => {
     expect(iconForTab("instances")).toBe("radio");
     expect(iconForTab("sessions")).toBe("fileText");
     expect(iconForTab("cron")).toBe("loader");
+    expect(iconForTab("docs")).toBe("book");
+    expect(iconForTab("faq")).toBe("fileText");
     expect(iconForTab("skills")).toBe("zap");
     expect(iconForTab("nodes")).toBe("monitor");
     expect(iconForTab("config")).toBe("settings");
@@ -59,6 +65,9 @@ describe("titleForTab", () => {
     expect(titleForTab("chat")).toBe("Chat");
     expect(titleForTab("overview")).toBe("Overview");
     expect(titleForTab("cron")).toBe("Cron Jobs");
+    expect(titleForTab("cron", { temporalMode: true })).toBe("Jobs");
+    expect(titleForTab("docs")).toBe("Docs");
+    expect(titleForTab("faq")).toBe("FAQ");
   });
 });
 
@@ -73,6 +82,7 @@ describe("subtitleForTab", () => {
   it("returns descriptive subtitles", () => {
     expect(subtitleForTab("chat")).toContain("chat session");
     expect(subtitleForTab("config")).toContain("openclaw.json");
+    expect(subtitleForTab("cron", { temporalMode: true })).toContain("Temporal");
   });
 });
 
@@ -117,6 +127,8 @@ describe("pathForTab", () => {
   it("returns correct path without base", () => {
     expect(pathForTab("chat")).toBe("/chat");
     expect(pathForTab("overview")).toBe("/overview");
+    expect(pathForTab("docs")).toBe("/docs");
+    expect(pathForTab("faq")).toBe("/faq");
   });
 
   it("prepends base path", () => {
@@ -130,6 +142,8 @@ describe("tabFromPath", () => {
     expect(tabFromPath("/chat")).toBe("chat");
     expect(tabFromPath("/overview")).toBe("overview");
     expect(tabFromPath("/sessions")).toBe("sessions");
+    expect(tabFromPath("/docs")).toBe("docs");
+    expect(tabFromPath("/faq")).toBe("faq");
   });
 
   it("returns chat for root path", () => {
@@ -175,15 +189,43 @@ describe("inferBasePathFromPathname", () => {
 describe("TAB_GROUPS", () => {
   it("contains all expected groups", () => {
     const labels = TAB_GROUPS.map((g) => g.label);
-    expect(labels).toContain("Chat");
-    expect(labels).toContain("Control");
-    expect(labels).toContain("Agent");
-    expect(labels).toContain("Settings");
+    expect(labels).toContain("chat");
+    expect(labels).toContain("control");
+    expect(labels).toContain("agent");
+    expect(labels).toContain("settings");
   });
 
   it("all tabs are unique", () => {
     const allTabs = TAB_GROUPS.flatMap((g) => g.tabs);
     const uniqueTabs = new Set(allTabs);
     expect(uniqueTabs.size).toBe(allTabs.length);
+  });
+});
+
+describe("mode tab filters", () => {
+  it("returns all groups for admin mode", () => {
+    const adminGroups = tabGroupsForMode("admin");
+    expect(adminGroups.flatMap((group) => group.tabs)).toEqual(
+      TAB_GROUPS.flatMap((group) => group.tabs),
+    );
+  });
+
+  it("hides sensitive tabs for client mode", () => {
+    const clientTabs = new Set(tabGroupsForMode("client").flatMap((group) => group.tabs));
+    expect(clientTabs.has("config")).toBe(false);
+    expect(clientTabs.has("debug")).toBe(false);
+    expect(clientTabs.has("logs")).toBe(false);
+    expect(clientTabs.has("nodes")).toBe(false);
+    expect(clientTabs.has("sessions")).toBe(false);
+    expect(clientTabs.has("chat")).toBe(true);
+    expect(clientTabs.has("agents")).toBe(true);
+    expect(clientTabs.has("docs")).toBe(true);
+    expect(clientTabs.has("faq")).toBe(true);
+  });
+
+  it("resolves blocked tab to fallback in client mode", () => {
+    expect(isTabVisibleForMode("debug", "client")).toBe(false);
+    expect(resolveTabForMode("debug", "client")).toBe(fallbackTabForMode("client"));
+    expect(resolveTabForMode("chat", "client")).toBe("chat");
   });
 });

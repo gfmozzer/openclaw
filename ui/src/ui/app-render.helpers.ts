@@ -48,6 +48,10 @@ function resetChatStateForSessionSwitch(state: AppViewState, sessionKey: string)
 }
 
 export function renderTab(state: AppViewState, tab: Tab) {
+  const temporalMode = String(state.cronStatus?.orchestrationMode ?? "")
+    .toLowerCase()
+    .includes("temporal");
+  const tabTitle = titleForTab(tab, { temporalMode });
   const href = pathForTab(tab, state.basePath);
   return html`
     <a
@@ -74,10 +78,10 @@ export function renderTab(state: AppViewState, tab: Tab) {
         }
         state.setTab(tab);
       }}
-      title=${titleForTab(tab)}
+      title=${tabTitle}
     >
       <span class="nav-item__icon" aria-hidden="true">${icons[iconForTab(tab)]}</span>
-      <span class="nav-item__text">${titleForTab(tab)}</span>
+      <span class="nav-item__text">${tabTitle}</span>
     </a>
   `;
 }

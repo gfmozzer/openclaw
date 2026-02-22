@@ -1,5 +1,6 @@
 import { applyQueueDropPolicy, shouldSkipQueueItem } from "../../../utils/queue-helpers.js";
-import { FOLLOWUP_QUEUES, getFollowupQueue } from "./state.js";
+import { enqueueFollowupJob } from "./bullmq-followup-queue.js";
+import { getFollowupQueueState, saveFollowupQueueState } from "./state.js";
 import type { FollowupRun, QueueDedupeMode, QueueSettings } from "./types.js";
 
 function isRunAlreadyQueued(
@@ -23,13 +24,13 @@ function isRunAlreadyQueued(
   return items.some((item) => item.prompt === run.prompt && hasSameRouting(item));
 }
 
-export function enqueueFollowupRun(
+export async function enqueueFollowupRun(
   key: string,
   run: FollowupRun,
   settings: QueueSettings,
   dedupeMode: QueueDedupeMode = "message-id",
-): boolean {
-  const queue = getFollowupQueue(key, settings);
+): Promise<boolean> {
+  const queue = await getFollowupQueueState(key, settings);
   const dedupe =
     dedupeMode === "none"
       ? undefined
@@ -53,17 +54,21 @@ export function enqueueFollowupRun(
   }
 
   queue.items.push(run);
+  
+  // Save updated state to Redis
+  await saveFollowupQueueState(key, queue);
+  
+  // Trigger debounced drain via BullMQ
+  await enqueueFollowupJob(key, queue.debounceMs);
+  
   return true;
 }
 
-export function getFollowupQueueDepth(key: string): number {
+export async function getFollowupQueueDepth(key: string, settings: QueueSettings): Promise<number> {
   const cleaned = key.trim();
   if (!cleaned) {
     return 0;
   }
-  const queue = FOLLOWUP_QUEUES.get(cleaned);
-  if (!queue) {
-    return 0;
-  }
+  const queue = await getFollowupQueueState(cleaned, settings);
   return queue.items.length;
 }

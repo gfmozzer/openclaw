@@ -194,13 +194,14 @@ describe("abort detection", () => {
         blockReplyBreak: "text_end",
       },
     };
-    enqueueFollowupRun(
+    const settings = { mode: "collect", debounceMs: 0, cap: 20, dropPolicy: "summarize" } as const;
+    await enqueueFollowupRun(
       sessionKey,
       followupRun,
-      { mode: "collect", debounceMs: 0, cap: 20, dropPolicy: "summarize" },
+      settings,
       "none",
     );
-    expect(getFollowupQueueDepth(sessionKey)).toBe(1);
+    expect(await getFollowupQueueDepth(sessionKey, settings)).toBe(1);
 
     const result = await runStopCommand({
       cfg,
@@ -210,7 +211,7 @@ describe("abort detection", () => {
     });
 
     expect(result.handled).toBe(true);
-    expect(getFollowupQueueDepth(sessionKey)).toBe(0);
+    expect(await getFollowupQueueDepth(sessionKey, settings)).toBe(0);
     expect(commandQueueMocks.clearCommandLane).toHaveBeenCalledWith(`session:${sessionKey}`);
   });
 

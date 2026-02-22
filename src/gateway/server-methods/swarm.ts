@@ -3,7 +3,7 @@ import {
   errorShape,
 } from "../protocol/index.js";
 import { authorizeEnterpriseScope } from "../stateless/enterprise-authorization.js";
-import type { EnterpriseIdentity, SwarmTeamDefinition, SwarmWorkerMember } from "../stateless/contracts/index.js";
+import type { SwarmTeamDefinition, SwarmWorkerMember } from "../stateless/contracts/index.js";
 import type { EnterpriseScope } from "../stateless/contracts/enterprise-orchestration.js";
 import type { GatewayRequestHandlers } from "./types.js";
 
@@ -13,28 +13,6 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function nonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function readIdentity(value: unknown): EnterpriseIdentity | null {
-  const record = asRecord(value);
-  if (!record) {
-    return null;
-  }
-  const tenantId = nonEmptyString(record.tenantId);
-  const requesterId = nonEmptyString(record.requesterId);
-  const role = nonEmptyString(record.role);
-  const scopes = Array.isArray(record.scopes)
-    ? record.scopes.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
-    : [];
-  if (!tenantId || !requesterId || !role) {
-    return null;
-  }
-  return {
-    tenantId,
-    requesterId,
-    role: role as EnterpriseIdentity["role"],
-    scopes: scopes as EnterpriseIdentity["scopes"],
-  };
 }
 
 function readWorkers(value: unknown): SwarmWorkerMember[] {
@@ -99,11 +77,11 @@ export const swarmHandlers: GatewayRequestHandlers = {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "invalid swarm.team.upsert params"));
       return;
     }
-    const identity = readIdentity(record.identity);
+    const identity = context.enterprisePrincipal ?? null;
     const teamRecord = asRecord(record.team);
     const tenantId = nonEmptyString(record.tenantId) ?? identity?.tenantId ?? null;
     if (!identity || !tenantId || !teamRecord) {
-      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing identity, tenantId or team"));
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal, tenantId or team"));
       return;
     }
     const auth = authorizeEnterpriseScope({
@@ -139,11 +117,11 @@ export const swarmHandlers: GatewayRequestHandlers = {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "invalid swarm.team.get params"));
       return;
     }
-    const identity = readIdentity(record.identity);
+    const identity = context.enterprisePrincipal ?? null;
     const tenantId = nonEmptyString(record.tenantId) ?? identity?.tenantId ?? null;
     const teamId = nonEmptyString(record.teamId);
     if (!identity || !tenantId || !teamId) {
-      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing identity, tenantId or teamId"));
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal, tenantId or teamId"));
       return;
     }
     const auth = authorizeEnterpriseScope({
@@ -174,10 +152,10 @@ export const swarmHandlers: GatewayRequestHandlers = {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "invalid swarm.team.list params"));
       return;
     }
-    const identity = readIdentity(record.identity);
+    const identity = context.enterprisePrincipal ?? null;
     const tenantId = nonEmptyString(record.tenantId) ?? identity?.tenantId ?? null;
     if (!identity || !tenantId) {
-      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing identity or tenantId"));
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal or tenantId"));
       return;
     }
     const auth = authorizeEnterpriseScope({
@@ -208,11 +186,11 @@ export const swarmHandlers: GatewayRequestHandlers = {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "invalid swarm.team.delete params"));
       return;
     }
-    const identity = readIdentity(record.identity);
+    const identity = context.enterprisePrincipal ?? null;
     const tenantId = nonEmptyString(record.tenantId) ?? identity?.tenantId ?? null;
     const teamId = nonEmptyString(record.teamId);
     if (!identity || !tenantId || !teamId) {
-      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing identity, tenantId or teamId"));
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal, tenantId or teamId"));
       return;
     }
     const auth = authorizeEnterpriseScope({

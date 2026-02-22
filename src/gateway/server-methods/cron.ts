@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 import { normalizeCronJobCreate, normalizeCronJobPatch } from "../../cron/normalize.js";
 import { readCronRunLogEntries, resolveCronRunLogPath } from "../../cron/run-log.js";
 import type { CronJob, CronJobCreate, CronJobPatch, CronPayload } from "../../cron/types.js";
@@ -11,7 +11,12 @@ import {
   type SchedulerAuthorizationInput,
   type SchedulerCallerRole,
 } from "../stateless/scheduler-policy.js";
-import type { RegisterSchedulerWorkflowRequest } from "../stateless/contracts/scheduler-orchestrator.js";
+import type {
+  RegisterSchedulerWorkflowRequest,
+  SchedulerWorkflowPatch,
+  SchedulerWorkflowState,
+} from "../stateless/contracts/scheduler-orchestrator.js";
+import type { EnterpriseIdentity } from "../stateless/contracts/index.js";
 import {
   ErrorCodes,
   errorShape,
@@ -105,14 +110,9 @@ function buildTemporalCronJob(jobId: string, now: number, create: CronJobCreate)
 }
 
 type TemporalOrchestrationParams = {
-  tenantId?: string;
   targetTenantId?: string;
   targetAgentId?: string;
   idempotencyKey?: string;
-  caller?: {
-    agentId?: string;
-    role?: SchedulerCallerRole;
-  };
 };
 
 function readTrimmed(value: unknown): string | undefined {
@@ -123,19 +123,87 @@ function readTrimmed(value: unknown): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
+const CALLBACK_AUTH_WINDOW_MS = 5 * 60 * 1000;
+const CALLBACK_NONCE_TTL_MS = 10 * 60 * 1000;
+const CALLBACK_NONCE_CACHE_MAX = 5_000;
+const callbackNonceCache = new Map<string, number>();
+
+function readTemporalCallbackSecret(env: NodeJS.ProcessEnv = process.env): string | null {
+  const value = env.OPENCLAW_TEMPORAL_CALLBACK_SECRET?.trim();
+  return value ? value : null;
+}
+
+function callbackSignaturePayload(params: {
+  tenantId: string;
+  agentId: string;
+  jobId: string;
+  correlationId: string;
+  status: string;
+  completedAt: number;
+  timestamp: number;
+  nonce: string;
+}): string {
+  return [
+    params.tenantId,
+    params.agentId,
+    params.jobId,
+    params.correlationId,
+    params.status,
+    String(params.completedAt),
+    String(params.timestamp),
+    params.nonce,
+  ].join("\n");
+}
+
+function hmacHex(secret: string, payload: string): string {
+  return createHmac("sha256", secret).update(payload).digest("hex");
+}
+
+function secureHexEquals(left: string, right: string): boolean {
+  const leftBytes = Buffer.from(left, "utf8");
+  const rightBytes = Buffer.from(right, "utf8");
+  if (leftBytes.length !== rightBytes.length) {
+    return false;
+  }
+  return timingSafeEqual(leftBytes, rightBytes);
+}
+
+function pruneCallbackNonceCache(now: number): void {
+  for (const [nonce, seenAt] of callbackNonceCache) {
+    if (seenAt < now - CALLBACK_NONCE_TTL_MS) {
+      callbackNonceCache.delete(nonce);
+    }
+  }
+  if (callbackNonceCache.size <= CALLBACK_NONCE_CACHE_MAX) {
+    return;
+  }
+  const entries = [...callbackNonceCache.entries()].sort((a, b) => a[1] - b[1]);
+  const overflow = callbackNonceCache.size - CALLBACK_NONCE_CACHE_MAX;
+  for (let i = 0; i < overflow; i += 1) {
+    callbackNonceCache.delete(entries[i]?.[0] ?? "");
+  }
+}
+
+function verifyCallbackHmac(params: {
+  secret: string;
+  payload: string;
+  signature: string;
+}): boolean {
+  const expected = hmacHex(params.secret, params.payload);
+  return secureHexEquals(expected, params.signature.trim().toLowerCase());
+}
+
 function resolveTemporalSchedulingIdentity(params: {
+  principal: EnterpriseIdentity;
   orchestration?: TemporalOrchestrationParams;
   jobAgentId?: string;
 }): SchedulerAuthorizationInput & {
   idempotencyKey?: string;
 } {
-  const tenantId = readTrimmed(params.orchestration?.tenantId) ?? "default";
+  const tenantId = params.principal.tenantId;
   const targetTenantId = readTrimmed(params.orchestration?.targetTenantId) ?? tenantId;
-  const callerAgentId =
-    readTrimmed(params.orchestration?.caller?.agentId) ??
-    readTrimmed(params.jobAgentId) ??
-    "default";
-  const callerRole = params.orchestration?.caller?.role ?? "supervisor";
+  const callerAgentId = params.principal.requesterId;
+  const callerRole: SchedulerCallerRole = params.principal.role === "worker" ? "worker" : "supervisor";
   const targetAgentId =
     readTrimmed(params.orchestration?.targetAgentId) ??
     readTrimmed(params.jobAgentId) ??
@@ -149,6 +217,14 @@ function resolveTemporalSchedulingIdentity(params: {
     targetAgentId,
     idempotencyKey,
   };
+}
+
+function extractCronJobFromWorkflow(wf: SchedulerWorkflowState): CronJob | null {
+  const payload = wf.payload;
+  if (isRecord(payload) && isRecord(payload.cronJob)) {
+    return payload.cronJob as unknown as CronJob;
+  }
+  return null;
 }
 
 export const cronHandlers: GatewayRequestHandlers = {
@@ -184,14 +260,25 @@ export const cronHandlers: GatewayRequestHandlers = {
       return;
     }
     if (resolveCronOrchestrationMode() === "temporal") {
-      respond(
-        false,
-        undefined,
-        errorShape(
-          ErrorCodes.UNAVAILABLE,
-          "cron.list is not available in temporal mode yet; query Temporal workflows instead.",
-        ),
-      );
+      const principal = context.enterprisePrincipal;
+      if (!principal) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal for temporal scheduling"));
+        return;
+      }
+      if (!context.schedulerOrchestrator) {
+        respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "scheduler orchestrator not configured for temporal mode"));
+        return;
+      }
+      const p = params as { includeDisabled?: boolean };
+      const workflows = await context.schedulerOrchestrator.listWorkflows({
+        tenantId: principal.tenantId,
+        agentId: principal.requesterId,
+        includeDisabled: p.includeDisabled,
+      });
+      const jobs = workflows
+        .map((wf) => extractCronJobFromWorkflow(wf))
+        .filter((job): job is CronJob => job !== null);
+      respond(true, { jobs }, undefined);
       return;
     }
     const p = params as { includeDisabled?: boolean };
@@ -213,14 +300,19 @@ export const cronHandlers: GatewayRequestHandlers = {
       return;
     }
     if (resolveCronOrchestrationMode() === "temporal") {
+      if (!context.schedulerOrchestrator) {
+        respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "scheduler orchestrator not configured for temporal mode"));
+        return;
+      }
+      const schedulerStatus = await context.schedulerOrchestrator.getStatus();
       respond(
         true,
         {
-          enabled: true,
+          enabled: schedulerStatus.connected,
           storePath: "temporal://workflow-registry",
-          jobs: 0,
+          jobs: schedulerStatus.activeWorkflows,
           nextWakeAtMs: null,
-          orchestrationMode: "temporal",
+          orchestrationMode: schedulerStatus.orchestrationMode,
         },
         undefined,
       );
@@ -254,6 +346,15 @@ export const cronHandlers: GatewayRequestHandlers = {
     }
     if (resolveCronOrchestrationMode() === "temporal") {
       incrementEnterpriseMetric("schedule_requests_total");
+      const principal = context.enterprisePrincipal;
+      if (!principal) {
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal for temporal scheduling"),
+        );
+        return;
+      }
       if (!context.schedulerOrchestrator) {
         respond(
           false,
@@ -266,6 +367,7 @@ export const cronHandlers: GatewayRequestHandlers = {
         return;
       }
       const identity = resolveTemporalSchedulingIdentity({
+        principal,
         orchestration: (jobCreate as { orchestration?: TemporalOrchestrationParams })
           .orchestration,
         jobAgentId: jobCreate.agentId ?? undefined,
@@ -363,14 +465,64 @@ export const cronHandlers: GatewayRequestHandlers = {
       return;
     }
     if (resolveCronOrchestrationMode() === "temporal") {
-      respond(
-        false,
-        undefined,
-        errorShape(
-          ErrorCodes.UNAVAILABLE,
-          "cron.update is not available in temporal mode yet; replace by remove + add.",
-        ),
+      const principal = context.enterprisePrincipal;
+      if (!principal) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal for temporal scheduling"));
+        return;
+      }
+      if (!context.schedulerOrchestrator) {
+        respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "scheduler orchestrator not configured for temporal mode"));
+        return;
+      }
+      const identity = resolveTemporalSchedulingIdentity({
+        principal,
+        orchestration: (p as { orchestration?: TemporalOrchestrationParams }).orchestration,
+      });
+      const auth = authorizeSchedulerAction({
+        input: identity,
+        teams: resolveSchedulerTeamMapFromEnv(),
+      });
+      if (!auth.ok) {
+        incrementEnterpriseMetric("schedule_denied_total");
+        respond(false, undefined, errorShape(ErrorCodes.FORBIDDEN, auth.message, {
+          details: { reason: auth.code },
+        }));
+        return;
+      }
+      const patch = p.patch as unknown as CronJobPatch;
+      if (patch.schedule) {
+        const timestampValidation = validateScheduleTimestamp(patch.schedule);
+        if (!timestampValidation.ok) {
+          respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, timestampValidation.message));
+          return;
+        }
+      }
+      const schedulerPatch: SchedulerWorkflowPatch = {};
+      if (patch.schedule) {
+        schedulerPatch.schedule = toTemporalSchedule(patch.schedule);
+      }
+      if (patch.payload) {
+        schedulerPatch.payload = patch.payload as unknown as Record<string, unknown>;
+      }
+      if (patch.enabled !== undefined) {
+        schedulerPatch.enabled = patch.enabled;
+      }
+      if (patch.name !== undefined) {
+        schedulerPatch.name = patch.name;
+      }
+      if (patch.description !== undefined) {
+        schedulerPatch.description = patch.description;
+      }
+      const updated = await context.schedulerOrchestrator.updateWorkflow(
+        { tenantId: identity.targetTenantId, agentId: identity.targetAgentId, jobId },
+        schedulerPatch,
       );
+      if (!updated) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `workflow not found for job ${jobId}`));
+        return;
+      }
+      const job = extractCronJobFromWorkflow(updated);
+      respond(true, job, undefined);
       return;
     }
     const patch = p.patch as unknown as CronJobPatch;
@@ -411,6 +563,15 @@ export const cronHandlers: GatewayRequestHandlers = {
       return;
     }
     if (resolveCronOrchestrationMode() === "temporal") {
+      const principal = context.enterprisePrincipal;
+      if (!principal) {
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal for temporal scheduling"),
+        );
+        return;
+      }
       if (!context.schedulerOrchestrator) {
         respond(
           false,
@@ -423,6 +584,7 @@ export const cronHandlers: GatewayRequestHandlers = {
         return;
       }
       const identity = resolveTemporalSchedulingIdentity({
+        principal,
         orchestration: (p as { orchestration?: TemporalOrchestrationParams }).orchestration,
       });
       const auth = authorizeSchedulerAction({
@@ -477,14 +639,44 @@ export const cronHandlers: GatewayRequestHandlers = {
       return;
     }
     if (resolveCronOrchestrationMode() === "temporal") {
-      respond(
-        false,
-        undefined,
-        errorShape(
-          ErrorCodes.UNAVAILABLE,
-          "cron.run is not available in temporal mode; trigger via Temporal CLI/UI.",
-        ),
-      );
+      const principal = context.enterprisePrincipal;
+      if (!principal) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal for temporal scheduling"));
+        return;
+      }
+      if (!context.schedulerOrchestrator) {
+        respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "scheduler orchestrator not configured for temporal mode"));
+        return;
+      }
+      const p = params as { id?: string; jobId?: string };
+      const jobId = p.id ?? p.jobId;
+      if (!jobId) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "invalid cron.run params: missing id"));
+        return;
+      }
+      const identity = resolveTemporalSchedulingIdentity({
+        principal,
+        orchestration: (p as { orchestration?: TemporalOrchestrationParams }).orchestration,
+      });
+      const auth = authorizeSchedulerAction({
+        input: identity,
+        teams: resolveSchedulerTeamMapFromEnv(),
+      });
+      if (!auth.ok) {
+        incrementEnterpriseMetric("schedule_denied_total");
+        respond(false, undefined, errorShape(ErrorCodes.FORBIDDEN, auth.message));
+        return;
+      }
+      const result = await context.schedulerOrchestrator.triggerWorkflow({
+        tenantId: identity.targetTenantId,
+        agentId: identity.targetAgentId,
+        jobId,
+      });
+      if (!result.ok) {
+        respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, result.reason ?? "failed to trigger workflow"));
+        return;
+      }
+      respond(true, { ok: true }, undefined);
       return;
     }
     const p = params as { id?: string; jobId?: string; mode?: "due" | "force" };
@@ -513,14 +705,40 @@ export const cronHandlers: GatewayRequestHandlers = {
       return;
     }
     if (resolveCronOrchestrationMode() === "temporal") {
-      respond(
-        false,
-        undefined,
-        errorShape(
-          ErrorCodes.UNAVAILABLE,
-          "cron.runs is not available in temporal mode yet; inspect run history in Temporal.",
-        ),
+      const principal = context.enterprisePrincipal;
+      if (!principal) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal for temporal scheduling"));
+        return;
+      }
+      if (!context.schedulerOrchestrator) {
+        respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "scheduler orchestrator not configured for temporal mode"));
+        return;
+      }
+      const p = params as { id?: string; jobId?: string; limit?: number };
+      const jobId = p.id ?? p.jobId;
+      if (!jobId) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "invalid cron.runs params: missing id"));
+        return;
+      }
+      const identity = resolveTemporalSchedulingIdentity({
+        principal,
+        orchestration: (p as { orchestration?: TemporalOrchestrationParams }).orchestration,
+      });
+      const executions = await context.schedulerOrchestrator.getWorkflowHistory(
+        { tenantId: identity.targetTenantId, agentId: identity.targetAgentId, jobId },
+        { limit: p.limit },
       );
+      const entries = executions.map((exec) => ({
+        jobId,
+        runAtMs: exec.startedAt ?? exec.completedAt ?? 0,
+        durationMs: exec.startedAt && exec.completedAt ? exec.completedAt - exec.startedAt : 0,
+        status: exec.status === "succeeded" ? "ok" as const : "error" as const,
+        error: exec.error?.message,
+        summary: exec.output?.summary as string | undefined,
+        workflowId: exec.workflowId,
+        runId: exec.runId,
+      }));
+      respond(true, { entries }, undefined);
       return;
     }
     const p = params as { id?: string; jobId?: string; limit?: number };
@@ -561,13 +779,25 @@ export const cronHandlers: GatewayRequestHandlers = {
     const jobId = readRequiredString(params, "jobId");
     const correlationId = readRequiredString(params, "correlationId");
     const status = readRequiredString(params, "status");
-    if (!tenantId.ok || !agentId.ok || !jobId.ok || !correlationId.ok || !status.ok) {
+    const timestamp = readRequiredString(params, "timestamp");
+    const nonce = readRequiredString(params, "nonce");
+    const signature = readRequiredString(params, "signature");
+    if (
+      !tenantId.ok ||
+      !agentId.ok ||
+      !jobId.ok ||
+      !correlationId.ok ||
+      !status.ok ||
+      !timestamp.ok ||
+      !nonce.ok ||
+      !signature.ok
+    ) {
       respond(
         false,
         undefined,
         errorShape(
           ErrorCodes.INVALID_REQUEST,
-          [tenantId, agentId, jobId, correlationId, status]
+          [tenantId, agentId, jobId, correlationId, status, timestamp, nonce, signature]
             .filter((entry) => !entry.ok)
             .map((entry) => entry.error)
             .join("; "),
@@ -575,6 +805,52 @@ export const cronHandlers: GatewayRequestHandlers = {
       );
       return;
     }
+    const secret = readTemporalCallbackSecret();
+    if (!secret) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.UNAVAILABLE, "temporal callback secret is not configured"),
+      );
+      return;
+    }
+    const timestampMs = Number(timestamp.value);
+    if (!Number.isFinite(timestampMs) || timestampMs <= 0) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "invalid callback timestamp"));
+      return;
+    }
+    const now = Date.now();
+    if (Math.abs(now - timestampMs) > CALLBACK_AUTH_WINDOW_MS) {
+      respond(false, undefined, errorShape(ErrorCodes.FORBIDDEN, "callback timestamp out of window"));
+      return;
+    }
+    pruneCallbackNonceCache(now);
+    if (callbackNonceCache.has(nonce.value)) {
+      respond(false, undefined, errorShape(ErrorCodes.FORBIDDEN, "callback nonce replay detected"));
+      return;
+    }
+    const completedAt = typeof params.completedAt === "number" ? params.completedAt : now;
+    const signedPayload = callbackSignaturePayload({
+      tenantId: tenantId.value,
+      agentId: agentId.value,
+      jobId: jobId.value,
+      correlationId: correlationId.value,
+      status: status.value,
+      completedAt,
+      timestamp: timestampMs,
+      nonce: nonce.value,
+    });
+    if (
+      !verifyCallbackHmac({
+        secret,
+        payload: signedPayload,
+        signature: signature.value,
+      })
+    ) {
+      respond(false, undefined, errorShape(ErrorCodes.FORBIDDEN, "invalid callback signature"));
+      return;
+    }
+    callbackNonceCache.set(nonce.value, now);
     if (!["succeeded", "failed", "timed_out", "cancelled"].includes(status.value)) {
       respond(
         false,
@@ -606,7 +882,7 @@ export const cronHandlers: GatewayRequestHandlers = {
       status: status.value as "succeeded" | "failed" | "timed_out" | "cancelled",
       output,
       error: errorData,
-      completedAt: typeof params.completedAt === "number" ? params.completedAt : Date.now(),
+      completedAt,
     });
     const sessionKey =
       typeof params.sessionKey === "string" && params.sessionKey.trim()

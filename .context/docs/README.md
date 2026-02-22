@@ -11,6 +11,8 @@ Welcome to the repository knowledge base. This is a fork of OpenClaw transformed
 - [Data Flow & Integrations](./data-flow.md) — message flow, scheduling, BYOK, skill/tool bus, swarm
 - [Security & Compliance Notes](./security.md) — RBAC/ABAC, tenant isolation, RLS, audit, security checklist
 - [Tooling & Productivity Guide](./tooling.md) — env vars, local Postgres setup, key scripts
+- [Swarm Worker Quickstart](./swarm-worker-quickstart.md) — montar time supervisor/worker e validar politica
+- [FAQ Enterprise Ops](./faq-enterprise-ops.md) — token/modelo/canais/scheduler/swarm
 
 ## Enterprise Workflows
 All transformation workflows are in `.agent/workflows/` (01–16).
@@ -82,3 +84,5 @@ See [Project Overview](./project-overview.md) for status of each.
 | Data Flow & Integrations | `data-flow.md` | System diagrams, integration specs, queue topics |
 | Security & Compliance Notes | `security.md` | Auth model, secrets management, compliance requirements |
 | Tooling & Productivity Guide | `tooling.md` | CLI scripts, IDE configs, automation workflows |
+| Swarm Worker Quickstart | `swarm-worker-quickstart.md` | Operacao de times supervisor/worker e cron policy |
+| FAQ Enterprise Ops | `faq-enterprise-ops.md` | Perguntas recorrentes de setup e operacao |

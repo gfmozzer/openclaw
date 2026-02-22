@@ -3,6 +3,7 @@ import {
   normalizeHeartbeatWakeReason,
   resolveHeartbeatReasonKind,
 } from "./heartbeat-reason.js";
+import { publishHeartbeatWake } from "./heartbeat-wake-redis.js";
 
 export type HeartbeatRunResult =
   | { status: "ran"; durationMs: number }
@@ -237,6 +238,8 @@ export function requestHeartbeatNow(opts?: {
     sessionKey: opts?.sessionKey,
   });
   schedule(opts?.coalesceMs ?? DEFAULT_COALESCE_MS, "normal");
+  // Broadcast to other cluster nodes (fire-and-forget)
+  void publishHeartbeatWake(opts);
 }
 
 export function hasHeartbeatWakeHandler() {

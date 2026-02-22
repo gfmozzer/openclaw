@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cronHandlers } from "./cron.js";
 import type { GatewayRequestContext } from "./types.js";
@@ -6,7 +7,31 @@ import {
   resetEnterpriseMetricsForTest,
 } from "../runtime-metrics.js";
 
-function createTemporalContext() {
+function signCallback(params: {
+  tenantId: string;
+  agentId: string;
+  jobId: string;
+  correlationId: string;
+  status: string;
+  completedAt: number;
+  timestamp: number;
+  nonce: string;
+  secret: string;
+}): string {
+  const payload = [
+    params.tenantId,
+    params.agentId,
+    params.jobId,
+    params.correlationId,
+    params.status,
+    String(params.completedAt),
+    String(params.timestamp),
+    params.nonce,
+  ].join("\n");
+  return createHmac("sha256", params.secret).update(payload).digest("hex");
+}
+
+function createTemporalContext(overrides?: Partial<GatewayRequestContext>) {
   const registerWorkflow = vi.fn(async () => ({ workflowId: "wf-1", registeredAt: Date.now() }));
   const cancelWorkflow = vi.fn(async () => true);
   const getWorkflow = vi.fn(async () => null);
@@ -41,6 +66,13 @@ function createTemporalContext() {
       error: vi.fn(),
       debug: vi.fn(),
     },
+    enterprisePrincipal: {
+      tenantId: "tenant-a",
+      requesterId: "super-1",
+      role: "supervisor",
+      scopes: ["jobs:schedule:self", "jobs:schedule:team", "jobs:cancel:self", "jobs:cancel:team"],
+    },
+    ...overrides,
   } as unknown as GatewayRequestContext;
 
   return {
@@ -58,6 +90,7 @@ describe("cron handlers temporal scheduling policy", () => {
   beforeEach(() => {
     process.env.OPENCLAW_CRON_ORCHESTRATION_MODE = "temporal";
     delete process.env.OPENCLAW_TEMPORAL_TEAM_MAP_JSON;
+    process.env.OPENCLAW_TEMPORAL_CALLBACK_SECRET = "test-callback-secret";
     resetEnterpriseMetricsForTest();
   });
 
@@ -74,9 +107,7 @@ describe("cron handlers temporal scheduling policy", () => {
         wakeMode: "next-heartbeat",
         payload: { kind: "agentTurn", message: "generate report" },
         orchestration: {
-          tenantId: "tenant-a",
           targetAgentId: "worker-1",
-          caller: { agentId: "super-1", role: "supervisor" },
           idempotencyKey: "req-123",
         },
       },
@@ -102,7 +133,14 @@ describe("cron handlers temporal scheduling policy", () => {
   });
 
   it("denies worker scheduling for another worker", async () => {
-    const { context, registerWorkflow } = createTemporalContext();
+    const { context, registerWorkflow } = createTemporalContext({
+      enterprisePrincipal: {
+        tenantId: "tenant-a",
+        requesterId: "worker-1",
+        role: "worker",
+        scopes: ["jobs:schedule:self", "jobs:cancel:self"],
+      },
+    });
     const respond = vi.fn();
 
     await cronHandlers["cron.add"]({
@@ -113,9 +151,9 @@ describe("cron handlers temporal scheduling policy", () => {
         wakeMode: "next-heartbeat",
         payload: { kind: "agentTurn", message: "should fail" },
         orchestration: {
-          tenantId: "tenant-a",
           targetAgentId: "worker-2",
-          caller: { agentId: "worker-1", role: "worker" },
+          // Forged caller payload should be ignored in favor of authenticated principal.
+          caller: { agentId: "super-1", role: "supervisor" },
         },
       },
       respond,
@@ -152,10 +190,8 @@ describe("cron handlers temporal scheduling policy", () => {
         wakeMode: "next-heartbeat",
         payload: { kind: "agentTurn", message: "should fail" },
         orchestration: {
-          tenantId: "tenant-a",
           targetTenantId: "tenant-b",
           targetAgentId: "worker-1",
-          caller: { agentId: "super-1", role: "supervisor" },
         },
       },
       respond,
@@ -180,16 +216,22 @@ describe("cron handlers temporal scheduling policy", () => {
   });
 
   it("allows worker removing own scheduled workflow", async () => {
-    const { context, cancelWorkflow } = createTemporalContext();
+    const { context, cancelWorkflow } = createTemporalContext({
+      enterprisePrincipal: {
+        tenantId: "tenant-a",
+        requesterId: "worker-1",
+        role: "worker",
+        scopes: ["jobs:schedule:self", "jobs:cancel:self"],
+      },
+    });
     const respond = vi.fn();
 
     await cronHandlers["cron.remove"]({
       params: {
         id: "job-1",
         orchestration: {
-          tenantId: "tenant-a",
           targetAgentId: "worker-1",
-          caller: { agentId: "worker-1", role: "worker" },
+          caller: { agentId: "super-1", role: "supervisor" },
         },
       },
       respond,
@@ -207,9 +249,47 @@ describe("cron handlers temporal scheduling policy", () => {
     expect(respond).toHaveBeenCalledWith(true, { ok: true, removed: true }, undefined);
   });
 
+  it("rejects scheduling when authenticated principal is missing", async () => {
+    const { context } = createTemporalContext({ enterprisePrincipal: undefined });
+    const respond = vi.fn();
+    await cronHandlers["cron.add"]({
+      params: {
+        name: "missing-principal",
+        schedule: { kind: "every", everyMs: 60_000 },
+        sessionTarget: "isolated",
+        wakeMode: "next-heartbeat",
+        payload: { kind: "agentTurn", message: "should fail" },
+      },
+      respond,
+      context,
+      client: null,
+      req: { type: "req", id: "9", method: "cron.add" },
+      isWebchatConnect: () => false,
+    });
+    expect(respond).toHaveBeenCalledWith(
+      false,
+      undefined,
+      expect.objectContaining({ code: "INVALID_REQUEST" }),
+    );
+  });
+
   it("records callback and emits chat final when sessionKey is provided", async () => {
     const { context, recordWorkflowCallback, broadcast, nodeSendToSession } = createTemporalContext();
     const respond = vi.fn();
+    const timestamp = Date.now();
+    const completedAt = timestamp;
+    const nonce = "nonce-1";
+    const signature = signCallback({
+      tenantId: "tenant-a",
+      agentId: "worker-1",
+      jobId: "job-1",
+      correlationId: "corr-1",
+      status: "succeeded",
+      completedAt,
+      timestamp,
+      nonce,
+      secret: process.env.OPENCLAW_TEMPORAL_CALLBACK_SECRET ?? "",
+    });
 
     await cronHandlers["cron.callback"]({
       params: {
@@ -218,6 +298,10 @@ describe("cron handlers temporal scheduling policy", () => {
         jobId: "job-1",
         correlationId: "corr-1",
         status: "succeeded",
+        timestamp: String(timestamp),
+        nonce,
+        signature,
+        completedAt,
         sessionKey: "session-a",
         resumeText: "resultado pronto",
       },
@@ -291,6 +375,20 @@ describe("cron handlers temporal scheduling policy", () => {
     const { context, recordWorkflowCallback } = createTemporalContext();
     const respond = vi.fn();
     recordWorkflowCallback.mockResolvedValueOnce(false);
+    const timestamp = Date.now();
+    const completedAt = timestamp;
+    const nonce = "nonce-2";
+    const signature = signCallback({
+      tenantId: "tenant-a",
+      agentId: "worker-1",
+      jobId: "job-1",
+      correlationId: "corr-fail",
+      status: "failed",
+      completedAt,
+      timestamp,
+      nonce,
+      secret: process.env.OPENCLAW_TEMPORAL_CALLBACK_SECRET ?? "",
+    });
 
     await cronHandlers["cron.callback"]({
       params: {
@@ -299,6 +397,10 @@ describe("cron handlers temporal scheduling policy", () => {
         jobId: "job-1",
         correlationId: "corr-fail",
         status: "failed",
+        timestamp: String(timestamp),
+        nonce,
+        signature,
+        completedAt,
       },
       respond,
       context,
@@ -309,6 +411,110 @@ describe("cron handlers temporal scheduling policy", () => {
 
     expect(respond).toHaveBeenCalledWith(true, { ok: true, accepted: false }, undefined);
     expect(getEnterpriseMetricsSnapshot().counters.workflow_resume_failures_total).toBe(1);
+  });
+
+  it("rejects callback with invalid signature", async () => {
+    const { context, recordWorkflowCallback } = createTemporalContext();
+    const respond = vi.fn();
+    await cronHandlers["cron.callback"]({
+      params: {
+        tenantId: "tenant-a",
+        agentId: "worker-1",
+        jobId: "job-1",
+        correlationId: "corr-invalid",
+        status: "failed",
+        timestamp: String(Date.now()),
+        nonce: "nonce-invalid",
+        signature: "bad-signature",
+        completedAt: Date.now(),
+      },
+      respond,
+      context,
+      client: null,
+      req: { type: "req", id: "10", method: "cron.callback" },
+      isWebchatConnect: () => false,
+    });
+    expect(recordWorkflowCallback).not.toHaveBeenCalled();
+    expect(respond).toHaveBeenCalledWith(
+      false,
+      undefined,
+      expect.objectContaining({ code: "FORBIDDEN" }),
+    );
+  });
+
+  it("rejects callback nonce replay", async () => {
+    const { context } = createTemporalContext();
+    const respondFirst = vi.fn();
+    const respondSecond = vi.fn();
+    const timestamp = Date.now();
+    const completedAt = timestamp;
+    const nonce = "nonce-replay";
+    const signature = signCallback({
+      tenantId: "tenant-a",
+      agentId: "worker-1",
+      jobId: "job-1",
+      correlationId: "corr-replay",
+      status: "failed",
+      completedAt,
+      timestamp,
+      nonce,
+      secret: process.env.OPENCLAW_TEMPORAL_CALLBACK_SECRET ?? "",
+    });
+
+    await cronHandlers["cron.callback"]({
+      params: {
+        tenantId: "tenant-a",
+        agentId: "worker-1",
+        jobId: "job-1",
+        correlationId: "corr-replay",
+        status: "failed",
+        timestamp: String(timestamp),
+        nonce,
+        signature,
+        completedAt,
+      },
+      respond: respondFirst,
+      context,
+      client: null,
+      req: { type: "req", id: "11", method: "cron.callback" },
+      isWebchatConnect: () => false,
+    });
+
+    await cronHandlers["cron.callback"]({
+      params: {
+        tenantId: "tenant-a",
+        agentId: "worker-1",
+        jobId: "job-1",
+        correlationId: "corr-replay-2",
+        status: "failed",
+        timestamp: String(timestamp),
+        nonce,
+        signature: signCallback({
+          tenantId: "tenant-a",
+          agentId: "worker-1",
+          jobId: "job-1",
+          correlationId: "corr-replay-2",
+          status: "failed",
+          completedAt,
+          timestamp,
+          nonce,
+          secret: process.env.OPENCLAW_TEMPORAL_CALLBACK_SECRET ?? "",
+        }),
+        completedAt,
+      },
+      respond: respondSecond,
+      context,
+      client: null,
+      req: { type: "req", id: "12", method: "cron.callback" },
+      isWebchatConnect: () => false,
+    });
+
+    expect(respondFirst).toHaveBeenCalledWith(true, { ok: true, accepted: true }, undefined);
+    expect(respondSecond).toHaveBeenCalledWith(
+      false,
+      undefined,
+      expect.objectContaining({ code: "FORBIDDEN" }),
+    );
   });
 
   it("counts resume failures when pull by correlationId misses", async () => {

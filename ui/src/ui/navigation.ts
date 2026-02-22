@@ -1,15 +1,7 @@
 import { t } from "../i18n/index.ts";
 import type { IconName } from "./icons.js";
 
-export const TAB_GROUPS = [
-  { label: "chat", tabs: ["chat"] },
-  {
-    label: "control",
-    tabs: ["overview", "channels", "instances", "sessions", "usage", "cron"],
-  },
-  { label: "agent", tabs: ["agents", "skills", "nodes"] },
-  { label: "settings", tabs: ["config", "debug", "logs"] },
-] as const;
+export type UiMode = "client" | "admin";
 
 export type Tab =
   | "agents"
@@ -19,12 +11,35 @@ export type Tab =
   | "sessions"
   | "usage"
   | "cron"
+  | "docs"
+  | "faq"
   | "skills"
   | "nodes"
   | "chat"
   | "config"
   | "debug"
   | "logs";
+
+export type TabGroup = { label: string; tabs: Tab[] };
+
+export const TAB_GROUPS: TabGroup[] = [
+  { label: "chat", tabs: ["chat"] },
+  {
+    label: "control",
+    tabs: ["overview", "channels", "instances", "sessions", "usage", "cron", "docs", "faq"],
+  },
+  { label: "agent", tabs: ["agents", "skills", "nodes"] },
+  { label: "settings", tabs: ["config", "debug", "logs"] },
+];
+const CLIENT_VISIBLE_TABS = new Set<Tab>([
+  "chat",
+  "overview",
+  "channels",
+  "usage",
+  "agents",
+  "docs",
+  "faq",
+]);
 
 const TAB_PATHS: Record<Tab, string> = {
   agents: "/agents",
@@ -34,6 +49,8 @@ const TAB_PATHS: Record<Tab, string> = {
   sessions: "/sessions",
   usage: "/usage",
   cron: "/cron",
+  docs: "/docs",
+  faq: "/faq",
   skills: "/skills",
   nodes: "/nodes",
   chat: "/chat",
@@ -141,6 +158,10 @@ export function iconForTab(tab: Tab): IconName {
       return "barChart";
     case "cron":
       return "loader";
+    case "docs":
+      return "book";
+    case "faq":
+      return "fileText";
     case "skills":
       return "zap";
     case "nodes":
@@ -156,10 +177,38 @@ export function iconForTab(tab: Tab): IconName {
   }
 }
 
-export function titleForTab(tab: Tab) {
+export function tabGroupsForMode(mode: UiMode): TabGroup[] {
+  if (mode === "admin") {
+    return [...TAB_GROUPS];
+  }
+  return TAB_GROUPS.map((group) => ({
+    ...group,
+    tabs: group.tabs.filter((tab) => CLIENT_VISIBLE_TABS.has(tab)),
+  })).filter((group) => group.tabs.length > 0);
+}
+
+export function isTabVisibleForMode(tab: Tab, mode: UiMode): boolean {
+  return mode === "admin" || CLIENT_VISIBLE_TABS.has(tab);
+}
+
+export function fallbackTabForMode(mode: UiMode): Tab {
+  return mode === "admin" ? "chat" : "chat";
+}
+
+export function resolveTabForMode(tab: Tab, mode: UiMode): Tab {
+  return isTabVisibleForMode(tab, mode) ? tab : fallbackTabForMode(mode);
+}
+
+export function titleForTab(tab: Tab, options?: { temporalMode?: boolean }) {
+  if (tab === "cron" && options?.temporalMode) {
+    return t("tabs.jobs");
+  }
   return t(`tabs.${tab}`);
 }
 
-export function subtitleForTab(tab: Tab) {
+export function subtitleForTab(tab: Tab, options?: { temporalMode?: boolean }) {
+  if (tab === "cron" && options?.temporalMode) {
+    return t("subtitles.jobs");
+  }
   return t(`subtitles.${tab}`);
 }

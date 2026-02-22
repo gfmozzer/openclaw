@@ -6,10 +6,10 @@ import type {
   ChannelsStatusSnapshot,
   CronJob,
   CronStatus,
+  EnterpriseMetricsSnapshot,
   SkillStatusReport,
 } from "../types.ts";
 import type {
-  EnterpriseIdentityInput,
   SwarmFormState,
   SwarmTeamDefinition,
   SwarmWorkerForm,
@@ -72,13 +72,15 @@ export type AgentsProps = {
   agentSkillsError: string | null;
   agentSkillsAgentId: string | null;
   skillsFilter: string;
+  metricsLoading: boolean;
+  metricsError: string | null;
+  metricsSnapshot: EnterpriseMetricsSnapshot | null;
   swarmLoading: boolean;
   swarmSaving: boolean;
   swarmError: string | null;
   swarmTeams: SwarmTeamDefinition[];
   swarmSelectedTeamId: string | null;
   swarmForm: SwarmFormState;
-  swarmIdentity: EnterpriseIdentityInput;
   onRefresh: () => void;
   onSelectAgent: (agentId: string) => void;
   onSelectPanel: (panel: AgentsPanel) => void;
@@ -95,6 +97,7 @@ export type AgentsProps = {
   onModelFallbacksChange: (agentId: string, fallbacks: string[]) => void;
   onChannelsRefresh: () => void;
   onCronRefresh: () => void;
+  onMetricsRefresh: () => void;
   onSkillsFilterChange: (next: string) => void;
   onSkillsRefresh: () => void;
   onAgentSkillToggle: (agentId: string, skillName: string, enabled: boolean) => void;
@@ -103,10 +106,6 @@ export type AgentsProps = {
   onSwarmRefresh: () => void;
   onSwarmCreate: () => void;
   onSwarmSelectTeam: (teamId: string) => void;
-  onSwarmIdentityChange: <K extends keyof EnterpriseIdentityInput>(
-    key: K,
-    value: EnterpriseIdentityInput[K],
-  ) => void;
   onSwarmFormChange: <K extends keyof SwarmFormState>(key: K, value: SwarmFormState[K]) => void;
   onSwarmWorkerAdd: () => void;
   onSwarmWorkerRemove: (index: number) => void;
@@ -237,12 +236,27 @@ export function renderAgents(props: AgentsProps) {
                 }
                 ${
                   props.activePanel === "memory"
-                    ? renderAgentMemory({ agentId: selectedAgent.id })
+                    ? renderAgentMemory({
+                        agentId: selectedAgent.id,
+                        loading: props.agentFilesLoading,
+                        error: props.agentFilesError,
+                        filesList: props.agentFilesList,
+                        activeFile: props.agentFileActive,
+                        fileContents: props.agentFileContents,
+                        onLoadFiles: () => props.onLoadFiles(selectedAgent.id),
+                        onOpenFile: (name) => props.onSelectFile(name),
+                      })
                     : nothing
                 }
                 ${
                   props.activePanel === "metrics"
-                    ? renderAgentMetrics({ agentId: selectedAgent.id })
+                    ? renderAgentMetrics({
+                        agentId: selectedAgent.id,
+                        loading: props.metricsLoading,
+                        error: props.metricsError,
+                        snapshot: props.metricsSnapshot,
+                        onRefresh: props.onMetricsRefresh,
+                      })
                     : nothing
                 }
                 ${
@@ -255,12 +269,10 @@ export function renderAgents(props: AgentsProps) {
                         teams: props.swarmTeams,
                         selectedTeamId: props.swarmSelectedTeamId,
                         form: props.swarmForm,
-                        identity: props.swarmIdentity,
                         availableAgentIds: agents.map((entry) => entry.id),
                         onRefresh: props.onSwarmRefresh,
                         onCreate: props.onSwarmCreate,
                         onSelectTeam: props.onSwarmSelectTeam,
-                        onIdentityChange: props.onSwarmIdentityChange,
                         onFormChange: props.onSwarmFormChange,
                         onWorkerAdd: props.onSwarmWorkerAdd,
                         onWorkerRemove: props.onSwarmWorkerRemove,
@@ -389,7 +401,7 @@ function renderAgentTabs(active: AgentsPanel, onSelect: (panel: AgentsPanel) => 
     { id: "tools", label: "Tools" },
     { id: "skills", label: "Skills" },
     { id: "channels", label: "Channels" },
-    { id: "cron", label: "Cron Jobs" },
+    { id: "cron", label: "Jobs" },
   ];
   return html`
     <div class="agent-tabs">

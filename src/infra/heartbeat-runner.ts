@@ -57,6 +57,7 @@ import {
   requestHeartbeatNow,
   setHeartbeatWakeHandler,
 } from "./heartbeat-wake.js";
+import { subscribeHeartbeatWake } from "./heartbeat-wake-redis.js";
 import type { OutboundSendDeps } from "./outbound/deliver.js";
 import { deliverOutboundPayloads } from "./outbound/deliver.js";
 import {
@@ -1169,6 +1170,8 @@ export function startHeartbeatRunner(opts: {
       sessionKey: params.sessionKey,
     });
   const disposeWakeHandler = setHeartbeatWakeHandler(wakeHandler);
+  // Start Redis Pub/Sub subscriber so other nodes' wake requests are received.
+  void subscribeHeartbeatWake();
   updateConfig(state.cfg);
 
   const cleanup = () => {

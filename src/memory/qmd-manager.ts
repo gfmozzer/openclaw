@@ -30,6 +30,10 @@ import { parseQmdQueryJson, type QmdQueryResult } from "./qmd-query-parser.js";
 
 const log = createSubsystemLogger("memory");
 
+function isRedisAvailable(): boolean {
+  return Boolean((process.env.OPENCLAW_REDIS_URL ?? "").trim());
+}
+
 const SNIPPET_HEADER_RE = /@@\s*-([0-9]+),([0-9]+)/;
 const SEARCH_PENDING_UPDATE_WAIT_MS = 500;
 const MAX_QMD_OUTPUT_CHARS = 200_000;
@@ -124,6 +128,7 @@ export class QmdMemoryManager implements MemorySearchManager {
   private lastEmbedAt: number | null = null;
   private embedBackoffUntil: number | null = null;
   private embedFailureCount = 0;
+  private bullmqQueue: import("bullmq").Queue | null = null;
   private attemptedNullByteCollectionRepair = false;
 
   private constructor(params: {
@@ -210,12 +215,39 @@ export class QmdMemoryManager implements MemorySearchManager {
       }
     }
     if (this.qmd.update.intervalMs > 0) {
-      this.updateTimer = setInterval(() => {
-        void this.runUpdate("interval").catch((err) => {
-          log.warn(`qmd update failed (${String(err)})`);
+      if (isRedisAvailable()) {
+        void this.setupBullMqRepeatableUpdate().catch((err) => {
+          log.warn(`qmd: BullMQ repeatable setup failed, falling back to setInterval: ${String(err)}`);
+          this.startLocalIntervalTimer();
         });
-      }, this.qmd.update.intervalMs);
+      } else {
+        this.startLocalIntervalTimer();
+      }
     }
+  }
+
+  private startLocalIntervalTimer(): void {
+    if (this.updateTimer) {
+      return;
+    }
+    this.updateTimer = setInterval(() => {
+      void this.runUpdate("interval").catch((err) => {
+        log.warn(`qmd update failed (${String(err)})`);
+      });
+    }, this.qmd.update.intervalMs);
+  }
+
+  private async setupBullMqRepeatableUpdate(): Promise<void> {
+    const { createQueue } = await import("../gateway/stateless/adapters/redis/bullmq-queue-factory.js");
+    const queue = createQueue("qmd-update");
+    const jobId = `qmd-update:${this.agentId}`;
+    await queue.add("qmd-interval", { agentId: this.agentId }, {
+      repeat: { every: this.qmd.update.intervalMs },
+      jobId,
+    });
+    // Store a reference so close() can remove the repeatable job
+    this.bullmqQueue = queue;
+    log.info(`qmd: registered BullMQ repeatable job ${jobId} every ${this.qmd.update.intervalMs}ms`);
   }
 
   private bootstrapCollections(): void {
@@ -597,6 +629,10 @@ export class QmdMemoryManager implements MemorySearchManager {
       clearInterval(this.updateTimer);
       this.updateTimer = null;
     }
+    if (this.bullmqQueue) {
+      await this.bullmqQueue.close().catch(() => undefined);
+      this.bullmqQueue = null;
+    }
     this.queuedForcedRuns = 0;
     await this.pendingUpdate?.catch(() => undefined);
     await this.queuedForcedUpdate?.catch(() => undefined);
@@ -724,6 +760,16 @@ export class QmdMemoryManager implements MemorySearchManager {
   }
 
   private enqueueForcedUpdate(reason: string): Promise<void> {
+    if (this.bullmqQueue) {
+      return this.bullmqQueue.add("qmd-forced-update", {
+        agentId: this.agentId,
+        reason,
+        force: true,
+      }, {
+        priority: 1,
+        removeOnComplete: { age: 60 },
+      }).then(() => undefined);
+    }
     this.queuedForcedRuns += 1;
     if (!this.queuedForcedUpdate) {
       this.queuedForcedUpdate = this.drainForcedUpdates(reason).finally(() => {

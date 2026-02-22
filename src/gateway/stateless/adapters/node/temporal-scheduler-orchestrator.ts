@@ -3,7 +3,10 @@ import type {
   SchedulerOrchestrator,
   SchedulerRegistrationResult,
   SchedulerScope,
+  SchedulerStatus,
   SchedulerWorkflowCallbackRequest,
+  SchedulerWorkflowExecution,
+  SchedulerWorkflowPatch,
   SchedulerWorkflowResumeSignal,
   SchedulerWorkflowState,
 } from "../../contracts/scheduler-orchestrator.js";
@@ -96,6 +99,53 @@ export class TemporalSchedulerOrchestrator implements SchedulerOrchestrator {
       { params },
     );
     return result?.signal ?? null;
+  }
+
+  async listWorkflows(params: {
+    tenantId: string;
+    agentId?: string;
+    includeDisabled?: boolean;
+  }): Promise<SchedulerWorkflowState[]> {
+    const result = await this.request<{ workflows?: SchedulerWorkflowState[] }>("/list", {
+      params,
+    });
+    return result?.workflows ?? [];
+  }
+
+  async updateWorkflow(
+    scope: SchedulerScope,
+    patch: SchedulerWorkflowPatch,
+  ): Promise<SchedulerWorkflowState | null> {
+    const result = await this.request<{ workflow?: SchedulerWorkflowState | null }>("/update", {
+      scope,
+      patch,
+    });
+    return result?.workflow ?? null;
+  }
+
+  async triggerWorkflow(scope: SchedulerScope): Promise<{ ok: boolean; reason?: string }> {
+    const result = await this.request<{ ok?: boolean; reason?: string }>("/trigger", { scope });
+    return { ok: result?.ok === true, reason: result?.reason };
+  }
+
+  async getWorkflowHistory(
+    scope: SchedulerScope,
+    opts?: { limit?: number },
+  ): Promise<SchedulerWorkflowExecution[]> {
+    const result = await this.request<{ executions?: SchedulerWorkflowExecution[] }>("/history", {
+      scope,
+      limit: opts?.limit,
+    });
+    return result?.executions ?? [];
+  }
+
+  async getStatus(): Promise<SchedulerStatus> {
+    const result = await this.request<SchedulerStatus>("/status", {});
+    return {
+      connected: result?.connected === true,
+      activeWorkflows: result?.activeWorkflows ?? 0,
+      orchestrationMode: result?.orchestrationMode ?? "temporal",
+    };
   }
 
   private async request<T>(path: string, body: unknown): Promise<T> {

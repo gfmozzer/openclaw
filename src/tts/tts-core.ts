@@ -501,6 +501,17 @@ export function scheduleCleanup(
   tempDir: string,
   delayMs: number = TEMP_FILE_CLEANUP_DELAY_MS,
 ): void {
+  if ((process.env.OPENCLAW_REDIS_URL ?? "").trim()) {
+    void scheduleBullMqCleanup(tempDir, delayMs).catch(() => {
+      // BullMQ failed, fall back to local setTimeout
+      scheduleLocalCleanup(tempDir, delayMs);
+    });
+    return;
+  }
+  scheduleLocalCleanup(tempDir, delayMs);
+}
+
+function scheduleLocalCleanup(tempDir: string, delayMs: number): void {
   const timer = setTimeout(() => {
     try {
       rmSync(tempDir, { recursive: true, force: true });
@@ -509,6 +520,16 @@ export function scheduleCleanup(
     }
   }, delayMs);
   timer.unref();
+}
+
+async function scheduleBullMqCleanup(tempDir: string, delayMs: number): Promise<void> {
+  const { createQueue } = await import("../gateway/stateless/adapters/redis/bullmq-queue-factory.js");
+  const queue = createQueue("tts-cleanup");
+  await queue.add("cleanup", { tempDir }, {
+    delay: delayMs,
+    removeOnComplete: true,
+  });
+  await queue.close();
 }
 
 export async function elevenLabsTTS(params: {

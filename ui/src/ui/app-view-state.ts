@@ -5,12 +5,11 @@ import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
 import type {
-  EnterpriseIdentityInput,
   SwarmFormState,
   SwarmTeamDefinition,
 } from "./controllers/swarm.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
-import type { Tab } from "./navigation.ts";
+import type { Tab, UiMode } from "./navigation.ts";
 import type { UiSettings } from "./storage.ts";
 import type { ThemeTransitionContext } from "./theme-transition.ts";
 import type { ThemeMode } from "./theme.ts";
@@ -24,9 +23,12 @@ import type {
   CronJob,
   CronRunLogEntry,
   CronStatus,
+  EnterpriseMetricsSnapshot,
   HealthSnapshot,
   LogEntry,
   LogLevel,
+  PortalStackStatus,
+  PortalContract,
   NostrProfile,
   PresenceEntry,
   SessionsUsageResult,
@@ -42,6 +44,7 @@ import type { SessionLogEntry } from "./views/usage.ts";
 
 export type AppViewState = {
   settings: UiSettings;
+  uiMode: UiMode;
   password: string;
   tab: Tab;
   onboarding: boolean;
@@ -118,6 +121,12 @@ export type AppViewState = {
   channelsSnapshot: ChannelsStatusSnapshot | null;
   channelsError: string | null;
   channelsLastSuccess: number | null;
+  portalStackLoading: boolean;
+  portalStackStatus: PortalStackStatus | null;
+  portalStackError: string | null;
+  portalContractLoading: boolean;
+  portalContract: PortalContract | null;
+  portalContractError: string | null;
   whatsappLoginMessage: string | null;
   whatsappLoginQrDataUrl: string | null;
   whatsappLoginConnected: boolean | null;
@@ -148,13 +157,15 @@ export type AppViewState = {
   agentSkillsError: string | null;
   agentSkillsReport: SkillStatusReport | null;
   agentSkillsAgentId: string | null;
+  enterpriseMetricsLoading: boolean;
+  enterpriseMetricsError: string | null;
+  enterpriseMetrics: EnterpriseMetricsSnapshot | null;
   swarmLoading: boolean;
   swarmSaving: boolean;
   swarmError: string | null;
   swarmTeams: SwarmTeamDefinition[];
   swarmSelectedTeamId: string | null;
   swarmForm: SwarmFormState;
-  swarmIdentity: EnterpriseIdentityInput;
   sessionsLoading: boolean;
   sessionsResult: SessionsListResult | null;
   sessionsError: string | null;
@@ -211,6 +222,7 @@ export type AppViewState = {
   skillsFilter: string;
   skillEdits: Record<string, string>;
   skillMessages: Record<string, SkillMessage>;
+  skillTestResults: Record<string, string>;
   skillsBusyKey: string | null;
   debugLoading: boolean;
   debugStatus: StatusSummary | null;

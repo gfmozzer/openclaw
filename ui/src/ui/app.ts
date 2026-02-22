@@ -58,9 +58,9 @@ import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
 import { createDefaultSwarmForm } from "./controllers/swarm.ts";
-import type { EnterpriseIdentityInput, SwarmTeamDefinition } from "./controllers/swarm.ts";
+import type { SwarmTeamDefinition } from "./controllers/swarm.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
-import type { Tab } from "./navigation.ts";
+import type { Tab, UiMode } from "./navigation.ts";
 import { loadSettings, type UiSettings } from "./storage.ts";
 import type { ResolvedTheme, ThemeMode } from "./theme.ts";
 import type {
@@ -72,9 +72,12 @@ import type {
   CronJob,
   CronRunLogEntry,
   CronStatus,
+  EnterpriseMetricsSnapshot,
   HealthSnapshot,
   LogEntry,
   LogLevel,
+  PortalContract,
+  PortalStackStatus,
   PresenceEntry,
   ChannelsStatusSnapshot,
   SessionsListResult,
@@ -110,6 +113,7 @@ function resolveOnboardingMode(): boolean {
 export class OpenClawApp extends LitElement {
   private i18nController = new I18nController(this);
   @state() settings: UiSettings = loadSettings();
+  @state() uiMode: UiMode = this.settings.uiMode ?? "admin";
   constructor() {
     super();
     if (isSupportedLocale(this.settings.locale)) {
@@ -199,6 +203,12 @@ export class OpenClawApp extends LitElement {
   @state() channelsSnapshot: ChannelsStatusSnapshot | null = null;
   @state() channelsError: string | null = null;
   @state() channelsLastSuccess: number | null = null;
+  @state() portalStackLoading = false;
+  @state() portalStackStatus: PortalStackStatus | null = null;
+  @state() portalStackError: string | null = null;
+  @state() portalContractLoading = false;
+  @state() portalContract: PortalContract | null = null;
+  @state() portalContractError: string | null = null;
   @state() whatsappLoginMessage: string | null = null;
   @state() whatsappLoginQrDataUrl: string | null = null;
   @state() whatsappLoginConnected: boolean | null = null;
@@ -231,18 +241,15 @@ export class OpenClawApp extends LitElement {
   @state() agentSkillsError: string | null = null;
   @state() agentSkillsReport: SkillStatusReport | null = null;
   @state() agentSkillsAgentId: string | null = null;
+  @state() enterpriseMetricsLoading = false;
+  @state() enterpriseMetricsError: string | null = null;
+  @state() enterpriseMetrics: EnterpriseMetricsSnapshot | null = null;
   @state() swarmLoading = false;
   @state() swarmSaving = false;
   @state() swarmError: string | null = null;
   @state() swarmTeams: SwarmTeamDefinition[] = [];
   @state() swarmSelectedTeamId: string | null = null;
   @state() swarmForm = createDefaultSwarmForm();
-  @state() swarmIdentity: EnterpriseIdentityInput = {
-    tenantId: "default",
-    requesterId: "control-ui",
-    role: "admin",
-    scopes: "swarm:read, swarm:write",
-  };
 
   @state() sessionsLoading = false;
   @state() sessionsResult: SessionsListResult | null = null;
@@ -325,6 +332,7 @@ export class OpenClawApp extends LitElement {
   @state() skillEdits: Record<string, string> = {};
   @state() skillsBusyKey: string | null = null;
   @state() skillMessages: Record<string, SkillMessage> = {};
+  @state() skillTestResults: Record<string, string> = {};
 
   @state() debugLoading = false;
   @state() debugStatus: StatusSummary | null = null;

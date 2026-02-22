@@ -3,6 +3,7 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import type { AssistantIdentity } from "../assistant-identity.ts";
 import { toSanitizedMarkdownHtml } from "../markdown.ts";
 import { detectTextDirection } from "../text-direction.ts";
+import type { PortalContract } from "../types.ts";
 import type { MessageGroup } from "../types/chat-types.ts";
 import { renderCopyAsMarkdownButton } from "./copy-as-markdown.ts";
 import {
@@ -11,6 +12,7 @@ import {
   formatReasoningMarkdown,
 } from "./message-extract.ts";
 import { isToolResultMessage, normalizeRoleForGrouping } from "./message-normalizer.ts";
+import { renderRichBlocksFromMessage } from "./rich-blocks.ts";
 import { extractToolCards, renderToolCardSidebar } from "./tool-cards.ts";
 
 type ImageBlock = {
@@ -111,6 +113,9 @@ export function renderMessageGroup(
     showReasoning: boolean;
     assistantName?: string;
     assistantAvatar?: string | null;
+    portalContract?: PortalContract | null;
+    callerScopes?: string[];
+    onPortalAction?: (payload: unknown, label?: string) => void;
   },
 ) {
   const normalizedRole = normalizeRoleForGrouping(group.role);
@@ -141,6 +146,9 @@ export function renderMessageGroup(
             {
               isStreaming: group.isStreaming && index === group.messages.length - 1,
               showReasoning: opts.showReasoning,
+              portalContract: opts.portalContract,
+              callerScopes: opts.callerScopes ?? [],
+              onPortalAction: opts.onPortalAction,
             },
             opts.onOpenSidebar,
           ),
@@ -218,7 +226,13 @@ function renderMessageImages(images: ImageBlock[]) {
 
 function renderGroupedMessage(
   message: unknown,
-  opts: { isStreaming: boolean; showReasoning: boolean },
+  opts: {
+    isStreaming: boolean;
+    showReasoning: boolean;
+    portalContract?: PortalContract | null;
+    callerScopes?: string[];
+    onPortalAction?: (payload: unknown, label?: string) => void;
+  },
   onOpenSidebar?: (content: string) => void,
 ) {
   const m = message as Record<string, unknown>;
@@ -241,6 +255,11 @@ function renderGroupedMessage(
   const markdownBase = extractedText?.trim() ? extractedText : null;
   const reasoningMarkdown = extractedThinking ? formatReasoningMarkdown(extractedThinking) : null;
   const markdown = markdownBase;
+  const richBlocks = renderRichBlocksFromMessage(message, {
+    contract: opts.portalContract ?? null,
+    callerScopes: opts.callerScopes ?? [],
+    onAction: opts.onPortalAction,
+  });
   const canCopyMarkdown = role === "assistant" && Boolean(markdown?.trim());
 
   const bubbleClasses = [
@@ -276,6 +295,7 @@ function renderGroupedMessage(
           ? html`<div class="chat-text" dir="${detectTextDirection(markdown)}">${unsafeHTML(toSanitizedMarkdownHtml(markdown))}</div>`
           : nothing
       }
+      ${richBlocks}
       ${toolCards.map((card) => renderToolCardSidebar(card, onOpenSidebar))}
     </div>
   `;

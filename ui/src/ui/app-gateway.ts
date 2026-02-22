@@ -25,6 +25,8 @@ import {
   removeExecApproval,
 } from "./controllers/exec-approval.ts";
 import { loadNodes } from "./controllers/nodes.ts";
+import { loadPortalContract } from "./controllers/portal-contract.ts";
+import { loadPortalStackStatus } from "./controllers/portal-stack.ts";
 import { loadSessions } from "./controllers/sessions.ts";
 import type { GatewayEventFrame, GatewayHelloOk } from "./gateway.ts";
 import { GatewayBrowserClient } from "./gateway.ts";
@@ -158,6 +160,8 @@ export function connectGateway(host: GatewayHost) {
       void loadAgents(host as unknown as OpenClawApp);
       void loadNodes(host as unknown as OpenClawApp, { quiet: true });
       void loadDevices(host as unknown as OpenClawApp, { quiet: true });
+      void loadPortalContract(host as unknown as Parameters<typeof loadPortalContract>[0]);
+      void loadPortalStackStatus(host as unknown as Parameters<typeof loadPortalStackStatus>[0]);
       void refreshActiveTab(host as unknown as Parameters<typeof refreshActiveTab>[0]);
     },
     onClose: ({ code, reason }) => {

@@ -156,6 +156,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .topbar-status .pill {
@@ -163,6 +165,11 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 500;
+  height: 32px;
+  box-sizing: border-box;
+}
+
+.topbar-status .btn.btn--sm {
   height: 32px;
   box-sizing: border-box;
 }

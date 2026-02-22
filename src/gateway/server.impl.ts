@@ -40,6 +40,7 @@ import {
 import { scheduleGatewayUpdateCheck } from "../infra/update-startup.js";
 import { startDiagnosticHeartbeat, stopDiagnosticHeartbeat } from "../logging/diagnostic.js";
 import { createSubsystemLogger, runtimeForLogger } from "../logging/subsystem.js";
+import { getMemorySearchManager } from "../memory/index.js";
 import { getGlobalHookRunner, runGlobalGatewayStopSafely } from "../plugins/hook-runner-global.js";
 import { createEmptyPluginRegistry } from "../plugins/registry.js";
 import type { PluginServicesHandle } from "../plugins/services.js";
@@ -548,6 +549,32 @@ export async function startGatewayServer(
     logCron.info("cron engine startup skipped (OPENCLAW_CRON_ORCHESTRATION_MODE=temporal)");
   }
 
+  // Start BullMQ workers when Redis is available (Plan 3: memory/QMD/TTS intervals).
+  let plan3Workers: import("bullmq").Worker[] = [];
+  if (!minimalTestGateway && statelessDeps.redisAvailable) {
+    void (async () => {
+      const { startPlan3Workers } = await import("./stateless/adapters/redis/plan3-workers.js");
+      const resolveSyncManager = async (agentId: string) => {
+        const { manager } = await getMemorySearchManager({
+          cfg: loadConfig(),
+          agentId,
+        });
+        if (!manager?.sync) {
+          return null;
+        }
+        return {
+          sync: async (params?: { reason?: string; force?: boolean }) => {
+            await manager.sync?.(params);
+          },
+        };
+      };
+      plan3Workers = startPlan3Workers({
+        qmdLookup: resolveSyncManager,
+        memorySyncLookup: resolveSyncManager,
+      });
+    })().catch((err) => log.warn(`Plan 3 workers failed to start: ${String(err)}`));
+  }
+
   // Recover pending outbound deliveries from previous crash/restart.
   if (!minimalTestGateway) {
     void (async () => {
@@ -594,6 +621,10 @@ export async function startGatewayServer(
       cron,
       cronStorePath,
       schedulerOrchestrator: statelessDeps.schedulerOrchestrator,
+      sessionStateStore: statelessDeps.sessionStateStore,
+      memoryStore: statelessDeps.memoryStore,
+      idempotencyStore: statelessDeps.idempotencyStore,
+      messageBus: statelessDeps.messageBus,
       swarmDirectoryStore: statelessDeps.swarmDirectoryStore,
       skillLoader: statelessDeps.skillLoader,
       toolBusDispatcher: statelessDeps.toolBusDispatcher,
@@ -776,6 +807,8 @@ export async function startGatewayServer(
       skillsChangeUnsub();
       authRateLimiter?.dispose();
       channelHealthMonitor?.stop();
+      // Shut down Plan 3 BullMQ workers before closing connections
+      await Promise.all(plan3Workers.map((w) => w.close().catch(() => undefined)));
       await close(opts);
     },
   };

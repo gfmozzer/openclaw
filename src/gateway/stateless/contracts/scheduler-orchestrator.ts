@@ -83,6 +83,34 @@ export type SchedulerWorkflowResumeSignal = {
   completedAt: number;
 };
 
+export type SchedulerWorkflowExecution = {
+  workflowId: string;
+  runId?: string;
+  scope: SchedulerScope;
+  status: SchedulerCallbackStatus;
+  startedAt?: number;
+  completedAt?: number;
+  output?: Record<string, unknown>;
+  error?: { code?: string; message: string };
+};
+
+export type SchedulerStatus = {
+  connected: boolean;
+  activeWorkflows: number;
+  orchestrationMode: string;
+};
+
+export type SchedulerWorkflowPatch = Partial<
+  Pick<
+    RegisterSchedulerWorkflowRequest,
+    "schedule" | "payload" | "workflowKind" | "queue"
+  > & {
+    enabled: boolean;
+    name: string;
+    description: string;
+  }
+>;
+
 export interface SchedulerOrchestrator {
   registerWorkflow(
     request: RegisterSchedulerWorkflowRequest,
@@ -94,4 +122,29 @@ export interface SchedulerOrchestrator {
     scope: Pick<SchedulerScope, "tenantId" | "agentId">;
     correlationId?: string;
   }): Promise<SchedulerWorkflowResumeSignal | null>;
+
+  /** List all workflows for a tenant, optionally filtered by agent */
+  listWorkflows(params: {
+    tenantId: string;
+    agentId?: string;
+    includeDisabled?: boolean;
+  }): Promise<SchedulerWorkflowState[]>;
+
+  /** Update an existing workflow's schedule, payload, or enabled state */
+  updateWorkflow(
+    scope: SchedulerScope,
+    patch: SchedulerWorkflowPatch,
+  ): Promise<SchedulerWorkflowState | null>;
+
+  /** Force-trigger a workflow execution now */
+  triggerWorkflow(scope: SchedulerScope): Promise<{ ok: boolean; reason?: string }>;
+
+  /** Get execution history for a workflow */
+  getWorkflowHistory(
+    scope: SchedulerScope,
+    opts?: { limit?: number },
+  ): Promise<SchedulerWorkflowExecution[]>;
+
+  /** Get scheduler system status */
+  getStatus(): Promise<SchedulerStatus>;
 }

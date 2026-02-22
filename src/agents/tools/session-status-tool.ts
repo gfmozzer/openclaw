@@ -336,7 +336,7 @@ export function createSessionStatusTool(opts?: {
         sessionEntry: resolved.entry,
       });
       const queueKey = resolved.key ?? resolved.entry.sessionId;
-      const queueDepth = queueKey ? getFollowupQueueDepth(queueKey) : 0;
+      const queueDepth = queueKey ? await getFollowupQueueDepth(queueKey, queueSettings) : 0;
       const queueOverrides = Boolean(
         resolved.entry.queueDebounceMs ?? resolved.entry.queueCap ?? resolved.entry.queueDrop,
       );

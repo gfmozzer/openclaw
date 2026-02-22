@@ -32,6 +32,8 @@ import {
   SkillsBinsParamsSchema,
   SkillsBinsResultSchema,
   SkillsInstallParamsSchema,
+  SkillsRemoteTestParamsSchema,
+  SkillsRemoteTestResultSchema,
   SkillsStatusParamsSchema,
   SkillsUpdateParamsSchema,
 } from "./agents-models-skills.js";
@@ -228,6 +230,8 @@ export const ProtocolSchemas: Record<string, TSchema> = {
   SkillsBinsResult: SkillsBinsResultSchema,
   SkillsInstallParams: SkillsInstallParamsSchema,
   SkillsUpdateParams: SkillsUpdateParamsSchema,
+  SkillsRemoteTestParams: SkillsRemoteTestParamsSchema,
+  SkillsRemoteTestResult: SkillsRemoteTestResultSchema,
   CronJob: CronJobSchema,
   CronListParams: CronListParamsSchema,
   CronStatusParams: CronStatusParamsSchema,

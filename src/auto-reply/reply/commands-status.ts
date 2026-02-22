@@ -110,7 +110,7 @@ export async function buildStatusReply(params: {
     sessionEntry,
   });
   const queueKey = sessionKey ?? sessionEntry?.sessionId;
-  const queueDepth = queueKey ? getFollowupQueueDepth(queueKey) : 0;
+  const queueDepth = queueKey ? await getFollowupQueueDepth(queueKey, queueSettings) : 0;
   const queueOverrides = Boolean(
     sessionEntry?.queueDebounceMs ?? sessionEntry?.queueCap ?? sessionEntry?.queueDrop,
   );

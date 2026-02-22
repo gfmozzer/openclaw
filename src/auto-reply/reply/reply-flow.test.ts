@@ -1,4 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+process.env.OPENCLAW_REDIS_URL = "";
+
 import { expectInboundContextContract } from "../../../test/helpers/inbound-contract.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import { defaultRuntime } from "../../runtime.js";
@@ -8,9 +11,34 @@ import { finalizeInboundContext } from "./inbound-context.js";
 import { normalizeInboundTextNewlines } from "./inbound-text.js";
 import { parseLineDirectives, hasLineDirectives } from "./line-directives.js";
 import type { FollowupRun, QueueSettings } from "./queue.js";
-import { enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
+import { enqueueFollowupRun, processFollowupDrain } from "./queue.js";
 import { createReplyDispatcher } from "./reply-dispatcher.js";
 import { createReplyToModeFilter, resolveReplyToMode } from "./reply-threading.js";
+
+const { mockRedisState } = vi.hoisted(() => ({ mockRedisState: new Map<string, string>() }));
+
+vi.mock("../../gateway/stateless/adapters/redis/bullmq-queue-factory.js", () => {
+  return {
+    createQueue: vi.fn(),
+    createWorker: vi.fn(),
+    isRedisAvailable: () => false,
+  };
+});
+
+vi.mock("../../gateway/stateless/adapters/redis/redis-connection.js", () => {
+  return {
+    getRedisClient: () => ({
+      get: async (key: string) => mockRedisState.get(key) || null,
+      set: async (key: string, val: string) => { mockRedisState.set(key, val); return "OK"; },
+      setex: async (key: string, _ttl: number, val: string) => { mockRedisState.set(key, val); return "OK"; },
+      del: async (key: string) => { mockRedisState.delete(key); return 1; }
+    })
+  };
+});
+
+vi.mock("./queue/bullmq-followup-queue.js", () => ({
+  enqueueFollowupJob: async () => {},
+}));
 
 describe("normalizeInboundTextNewlines", () => {
   it("converts CRLF to LF", () => {
@@ -648,7 +676,7 @@ describe("followup queue deduplication", () => {
     };
 
     // First enqueue should succeed
-    const first = enqueueFollowupRun(
+    const first = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "[Discord Guild #test channel id:123] Hello",
@@ -661,7 +689,7 @@ describe("followup queue deduplication", () => {
     expect(first).toBe(true);
 
     // Second enqueue with same message id should be deduplicated
-    const second = enqueueFollowupRun(
+    const second = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "[Discord Guild #test channel id:123] Hello (dupe)",
@@ -674,7 +702,7 @@ describe("followup queue deduplication", () => {
     expect(second).toBe(false);
 
     // Third enqueue with different message id should succeed
-    const third = enqueueFollowupRun(
+    const third = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "[Discord Guild #test channel id:123] World",
@@ -686,7 +714,7 @@ describe("followup queue deduplication", () => {
     );
     expect(third).toBe(true);
 
-    scheduleFollowupDrain(key, runFollowup);
+    processFollowupDrain(key, runFollowup);
     await done.promise;
     // Should collect both unique messages
     expect(calls[0]?.prompt).toContain("[Queued messages while agent was busy]");
@@ -702,7 +730,7 @@ describe("followup queue deduplication", () => {
     };
 
     // First enqueue should succeed
-    const first = enqueueFollowupRun(
+    const first = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "Hello world",
@@ -714,7 +742,7 @@ describe("followup queue deduplication", () => {
     expect(first).toBe(true);
 
     // Second enqueue with same prompt should be allowed (default dedupe: message id only)
-    const second = enqueueFollowupRun(
+    const second = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "Hello world",
@@ -726,7 +754,7 @@ describe("followup queue deduplication", () => {
     expect(second).toBe(true);
 
     // Third enqueue with different prompt should succeed
-    const third = enqueueFollowupRun(
+    const third = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "Hello world 2",
@@ -747,7 +775,7 @@ describe("followup queue deduplication", () => {
       dropPolicy: "summarize",
     };
 
-    const first = enqueueFollowupRun(
+    const first = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "Same text",
@@ -758,7 +786,7 @@ describe("followup queue deduplication", () => {
     );
     expect(first).toBe(true);
 
-    const second = enqueueFollowupRun(
+    const second = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "Same text",
@@ -779,7 +807,7 @@ describe("followup queue deduplication", () => {
       dropPolicy: "summarize",
     };
 
-    const first = enqueueFollowupRun(
+    const first = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "Hello world",
@@ -791,7 +819,7 @@ describe("followup queue deduplication", () => {
     );
     expect(first).toBe(true);
 
-    const second = enqueueFollowupRun(
+    const second = await enqueueFollowupRun(
       key,
       createRun({
         prompt: "Hello world",
@@ -824,7 +852,7 @@ describe("followup queue collect routing", () => {
       dropPolicy: "summarize",
     };
 
-    enqueueFollowupRun(
+    await enqueueFollowupRun(
       key,
       createRun({
         prompt: "one",
@@ -833,7 +861,7 @@ describe("followup queue collect routing", () => {
       }),
       settings,
     );
-    enqueueFollowupRun(
+    await enqueueFollowupRun(
       key,
       createRun({
         prompt: "two",
@@ -843,7 +871,7 @@ describe("followup queue collect routing", () => {
       settings,
     );
 
-    scheduleFollowupDrain(key, runFollowup);
+    await processFollowupDrain(key, runFollowup);
     await done.promise;
     expect(calls[0]?.prompt).toBe("one");
     expect(calls[1]?.prompt).toBe("two");
@@ -867,7 +895,7 @@ describe("followup queue collect routing", () => {
       dropPolicy: "summarize",
     };
 
-    enqueueFollowupRun(
+    await enqueueFollowupRun(
       key,
       createRun({
         prompt: "one",
@@ -876,7 +904,7 @@ describe("followup queue collect routing", () => {
       }),
       settings,
     );
-    enqueueFollowupRun(
+    await enqueueFollowupRun(
       key,
       createRun({
         prompt: "two",
@@ -886,7 +914,7 @@ describe("followup queue collect routing", () => {
       settings,
     );
 
-    scheduleFollowupDrain(key, runFollowup);
+    await processFollowupDrain(key, runFollowup);
     await done.promise;
     expect(calls[0]?.prompt).toContain("[Queued messages while agent was busy]");
     expect(calls[0]?.originatingChannel).toBe("slack");
@@ -911,7 +939,7 @@ describe("followup queue collect routing", () => {
       dropPolicy: "summarize",
     };
 
-    enqueueFollowupRun(
+    await enqueueFollowupRun(
       key,
       createRun({
         prompt: "one",
@@ -921,7 +949,7 @@ describe("followup queue collect routing", () => {
       }),
       settings,
     );
-    enqueueFollowupRun(
+    await enqueueFollowupRun(
       key,
       createRun({
         prompt: "two",
@@ -932,7 +960,7 @@ describe("followup queue collect routing", () => {
       settings,
     );
 
-    scheduleFollowupDrain(key, runFollowup);
+    await processFollowupDrain(key, runFollowup);
     await done.promise;
     expect(calls[0]?.prompt).toContain("[Queued messages while agent was busy]");
     expect(calls[0]?.originatingThreadId).toBe("1706000000.000001");
@@ -956,7 +984,7 @@ describe("followup queue collect routing", () => {
       dropPolicy: "summarize",
     };
 
-    enqueueFollowupRun(
+    await enqueueFollowupRun(
       key,
       createRun({
         prompt: "one",
@@ -966,7 +994,7 @@ describe("followup queue collect routing", () => {
       }),
       settings,
     );
-    enqueueFollowupRun(
+    await enqueueFollowupRun(
       key,
       createRun({
         prompt: "two",
@@ -977,7 +1005,7 @@ describe("followup queue collect routing", () => {
       settings,
     );
 
-    scheduleFollowupDrain(key, runFollowup);
+    await processFollowupDrain(key, runFollowup);
     await done.promise;
     expect(calls[0]?.prompt).toBe("one");
     expect(calls[1]?.prompt).toBe("two");
@@ -1008,10 +1036,13 @@ describe("followup queue collect routing", () => {
       dropPolicy: "summarize",
     };
 
-    enqueueFollowupRun(key, createRun({ prompt: "one" }), settings);
-    enqueueFollowupRun(key, createRun({ prompt: "two" }), settings);
+    await enqueueFollowupRun(key, createRun({ prompt: "one" }), settings);
+    await enqueueFollowupRun(key, createRun({ prompt: "two" }), settings);
 
-    scheduleFollowupDrain(key, runFollowup);
+    // First drain: fails transiently (simulates BullMQ first attempt)
+    await processFollowupDrain(key, runFollowup).catch(() => {});
+    // Second drain: succeeds (simulates BullMQ automatic retry)
+    await processFollowupDrain(key, runFollowup);
     await done.promise;
     expect(calls[0]?.prompt).toContain("Queued #1\none");
     expect(calls[0]?.prompt).toContain("Queued #2\ntwo");
@@ -1040,10 +1071,13 @@ describe("followup queue collect routing", () => {
       dropPolicy: "summarize",
     };
 
-    enqueueFollowupRun(key, createRun({ prompt: "first" }), settings);
-    enqueueFollowupRun(key, createRun({ prompt: "second" }), settings);
+    await enqueueFollowupRun(key, createRun({ prompt: "first" }), settings);
+    await enqueueFollowupRun(key, createRun({ prompt: "second" }), settings);
 
-    scheduleFollowupDrain(key, runFollowup);
+    // First drain: fails transiently (simulates BullMQ first attempt)
+    await processFollowupDrain(key, runFollowup).catch(() => {});
+    // Second drain: succeeds (simulates BullMQ automatic retry)
+    await processFollowupDrain(key, runFollowup);
     await done.promise;
     expect(calls[0]?.prompt).toContain("[Queue overflow] Dropped 1 message due to cap.");
     expect(calls[0]?.prompt).toContain("- first");

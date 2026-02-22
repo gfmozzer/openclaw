@@ -207,3 +207,25 @@ export const SkillsUpdateParamsSchema = Type.Object(
   },
   { additionalProperties: false },
 );
+
+export const SkillsRemoteTestParamsSchema = Type.Object(
+  {
+    skillKey: NonEmptyString,
+    endpoint: Type.Optional(NonEmptyString),
+    payload: Type.Optional(Type.String()),
+    timeoutMs: Type.Optional(Type.Integer({ minimum: 1000, maximum: 30000 })),
+  },
+  { additionalProperties: false },
+);
+
+export const SkillsRemoteTestResultSchema = Type.Object(
+  {
+    ok: Type.Boolean(),
+    endpoint: Type.String(),
+    status: Type.Integer({ minimum: 0, maximum: 599 }),
+    latencyMs: Type.Integer({ minimum: 0 }),
+    bodyPreview: Type.String(),
+    transportError: Type.Optional(Type.String()),
+  },
+  { additionalProperties: false },
+);

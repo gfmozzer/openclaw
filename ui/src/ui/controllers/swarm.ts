@@ -39,6 +39,12 @@ export type SwarmFormState = {
 
 export type SwarmState = {
   client: GatewayBrowserClient | null;
+  hello?: {
+    auth?: {
+      role?: string;
+      scopes?: string[];
+    };
+  } | null;
   connected: boolean;
   swarmLoading: boolean;
   swarmSaving: boolean;
@@ -46,7 +52,6 @@ export type SwarmState = {
   swarmTeams: SwarmTeamDefinition[];
   swarmSelectedTeamId: string | null;
   swarmForm: SwarmFormState;
-  swarmIdentity: EnterpriseIdentityInput;
 };
 
 function parseCsv(value: string): string[] {
@@ -85,17 +90,27 @@ function teamToForm(team: SwarmTeamDefinition): SwarmFormState {
   };
 }
 
-function createIdentity(state: SwarmState) {
-  const tenantId = state.swarmIdentity.tenantId.trim();
-  const requesterId = state.swarmIdentity.requesterId.trim();
-  const scopes = parseCsv(state.swarmIdentity.scopes);
-  if (!tenantId || !requesterId) {
-    throw new Error("Tenant e requester são obrigatórios para operações de swarm.");
+function normalizeRole(value: string | undefined): EnterpriseRole {
+  if (value === "admin" || value === "supervisor" || value === "worker") {
+    return value;
   }
+  return "admin";
+}
+
+function createIdentity(state: SwarmState) {
+  // Swarm operations run under the authenticated control-ui identity.
+  // Defaults keep admin tooling usable in local/dev environments.
+  const tenantId = "default";
+  const requesterId = "control-ui";
+  const role = normalizeRole(state.hello?.auth?.role);
+  const scopes =
+    Array.isArray(state.hello?.auth?.scopes) && state.hello.auth.scopes.length > 0
+      ? state.hello.auth.scopes
+      : ["swarm:read", "swarm:write"];
   return {
     tenantId,
     requesterId,
-    role: state.swarmIdentity.role,
+    role,
     scopes,
   };
 }
@@ -111,14 +126,6 @@ export function createDefaultSwarmForm(supervisorAgentId = ""): SwarmFormState {
 export function resetSwarmForm(state: SwarmState, supervisorAgentId: string) {
   state.swarmSelectedTeamId = null;
   state.swarmForm = createDefaultSwarmForm(supervisorAgentId);
-}
-
-export function setSwarmIdentityField<K extends keyof EnterpriseIdentityInput>(
-  state: SwarmState,
-  key: K,
-  value: EnterpriseIdentityInput[K],
-) {
-  state.swarmIdentity = { ...state.swarmIdentity, [key]: value };
 }
 
 export function setSwarmFormField<K extends keyof SwarmFormState>(

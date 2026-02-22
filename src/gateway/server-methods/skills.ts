@@ -19,6 +19,7 @@ import {
   formatValidationErrors,
   validateSkillsBinsParams,
   validateSkillsInstallParams,
+  validateSkillsRemoteTestParams,
   validateSkillsStatusParams,
   validateSkillsUpdateParams,
 } from "../protocol/index.js";
@@ -53,6 +54,22 @@ function collectSkillBins(entries: SkillEntry[]): string[] {
     }
   }
   return [...bins].toSorted();
+}
+
+const EXTERNAL_SKILL_ENDPOINT_ENV_KEY = "OPENCLAW_EXTERNAL_ENDPOINT";
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export const skillsHandlers: GatewayRequestHandlers = {
@@ -223,5 +240,85 @@ export const skillsHandlers: GatewayRequestHandlers = {
     };
     await writeConfigFile(nextConfig);
     respond(true, { ok: true, skillKey: p.skillKey, config: current }, undefined);
+  },
+  "skills.remote.test": async ({ params, respond }) => {
+    if (!validateSkillsRemoteTestParams(params)) {
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.INVALID_REQUEST,
+          `invalid skills.remote.test params: ${formatValidationErrors(validateSkillsRemoteTestParams.errors)}`,
+        ),
+      );
+      return;
+    }
+    const p = params as {
+      skillKey: string;
+      endpoint?: string;
+      payload?: string;
+      timeoutMs?: number;
+    };
+    const cfg = loadConfig();
+    const configuredEndpoint =
+      cfg.skills?.entries?.[p.skillKey]?.env?.[EXTERNAL_SKILL_ENDPOINT_ENV_KEY];
+    const endpoint = (p.endpoint ?? configuredEndpoint ?? "").trim();
+    if (!endpoint) {
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.INVALID_REQUEST,
+          `missing external endpoint (set ${EXTERNAL_SKILL_ENDPOINT_ENV_KEY} on skill ${p.skillKey})`,
+        ),
+      );
+      return;
+    }
+    const payload = (p.payload ?? "").trim();
+    const timeoutMs = typeof p.timeoutMs === "number" ? p.timeoutMs : 10_000;
+    const startedAt = Date.now();
+    try {
+      const response = await fetchWithTimeout(
+        endpoint,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            skillKey: p.skillKey,
+            payload,
+            probe: "openclaw.skills.remote.test",
+          }),
+        },
+        timeoutMs,
+      );
+      const bodyPreview = (await response.text()).slice(0, 4_000);
+      respond(
+        true,
+        {
+          ok: response.ok,
+          endpoint,
+          status: response.status,
+          latencyMs: Date.now() - startedAt,
+          bodyPreview,
+        },
+        undefined,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      respond(
+        true,
+        {
+          ok: false,
+          endpoint,
+          status: 0,
+          latencyMs: Date.now() - startedAt,
+          bodyPreview: "",
+          transportError: message,
+        },
+        undefined,
+      );
+    }
   },
 };

@@ -18,17 +18,22 @@ import { loadDevices } from "./controllers/devices.ts";
 import { loadExecApprovals } from "./controllers/exec-approvals.ts";
 import { loadLogs } from "./controllers/logs.ts";
 import { loadNodes } from "./controllers/nodes.ts";
+import { loadPortalContract } from "./controllers/portal-contract.ts";
+import { loadPortalStackStatus } from "./controllers/portal-stack.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { loadSessions } from "./controllers/sessions.ts";
 import { loadSkills } from "./controllers/skills.ts";
 import { loadSwarmTeams, resetSwarmForm } from "./controllers/swarm.ts";
 import {
   inferBasePathFromPathname,
+  isTabVisibleForMode,
   normalizeBasePath,
   normalizePath,
   pathForTab,
+  resolveTabForMode,
   tabFromPath,
   type Tab,
+  type UiMode,
 } from "./navigation.ts";
 import { saveSettings, type UiSettings } from "./storage.ts";
 import { startThemeTransition, type ThemeTransitionContext } from "./theme-transition.ts";
@@ -43,6 +48,7 @@ type SettingsHost = {
   applySessionKey: string;
   sessionKey: string;
   tab: Tab;
+  uiMode: UiMode;
   connected: boolean;
   chatHasAutoScrolled: boolean;
   logsAtBottom: boolean;
@@ -55,6 +61,9 @@ type SettingsHost = {
   themeMedia: MediaQueryList | null;
   themeMediaHandler: ((event: MediaQueryListEvent) => void) | null;
   pendingGatewayUrl?: string | null;
+  portalStackLoading?: boolean;
+  portalStackStatus?: import("./types.ts").PortalStackStatus | null;
+  portalStackError?: string | null;
 };
 
 export function applySettings(host: SettingsHost, next: UiSettings) {
@@ -63,12 +72,17 @@ export function applySettings(host: SettingsHost, next: UiSettings) {
     lastActiveSessionKey: next.lastActiveSessionKey?.trim() || next.sessionKey.trim() || "main",
   };
   host.settings = normalized;
+  host.uiMode = normalized.uiMode;
   saveSettings(normalized);
   if (next.theme !== host.theme) {
     host.theme = next.theme;
     applyResolvedTheme(host, resolveTheme(next.theme));
   }
   host.applySessionKey = host.settings.lastActiveSessionKey;
+  const resolvedTab = resolveTabForMode(host.tab, host.uiMode);
+  if (resolvedTab !== host.tab) {
+    host.tab = resolvedTab;
+  }
 }
 
 export function setLastActiveSessionKey(host: SettingsHost, next: string) {
@@ -145,24 +159,28 @@ export function applySettingsFromUrl(host: SettingsHost) {
 }
 
 export function setTab(host: SettingsHost, next: Tab) {
-  if (host.tab !== next) {
-    host.tab = next;
+  const resolved = resolveTabForMode(next, host.uiMode);
+  if (!isTabVisibleForMode(next, host.uiMode)) {
+    syncUrlWithTab(host, resolved, true);
   }
-  if (next === "chat") {
+  if (host.tab !== resolved) {
+    host.tab = resolved;
+  }
+  if (resolved === "chat") {
     host.chatHasAutoScrolled = false;
   }
-  if (next === "logs") {
+  if (resolved === "logs") {
     startLogsPolling(host as unknown as Parameters<typeof startLogsPolling>[0]);
   } else {
     stopLogsPolling(host as unknown as Parameters<typeof stopLogsPolling>[0]);
   }
-  if (next === "debug") {
+  if (resolved === "debug") {
     startDebugPolling(host as unknown as Parameters<typeof startDebugPolling>[0]);
   } else {
     stopDebugPolling(host as unknown as Parameters<typeof stopDebugPolling>[0]);
   }
   void refreshActiveTab(host);
-  syncUrlWithTab(host, next, false);
+  syncUrlWithTab(host, resolved, false);
 }
 
 export function setTheme(host: SettingsHost, next: ThemeMode, context?: ThemeTransitionContext) {
@@ -180,6 +198,12 @@ export function setTheme(host: SettingsHost, next: ThemeMode, context?: ThemeTra
 }
 
 export async function refreshActiveTab(host: SettingsHost) {
+  const resolved = resolveTabForMode(host.tab, host.uiMode);
+  if (resolved !== host.tab) {
+    host.tab = resolved;
+    syncUrlWithTab(host, resolved, true);
+    return;
+  }
   if (host.tab === "overview") {
     await loadOverview(host);
   }
@@ -231,7 +255,10 @@ export async function refreshActiveTab(host: SettingsHost) {
     await loadExecApprovals(host as unknown as OpenClawApp);
   }
   if (host.tab === "chat") {
-    await refreshChat(host as unknown as Parameters<typeof refreshChat>[0]);
+    await Promise.all([
+      refreshChat(host as unknown as Parameters<typeof refreshChat>[0]),
+      loadPortalContract(host as unknown as Parameters<typeof loadPortalContract>[0]),
+    ]);
     scheduleChatScroll(
       host as unknown as Parameters<typeof scheduleChatScroll>[0],
       !host.chatHasAutoScrolled,
@@ -319,7 +346,8 @@ export function syncTabWithLocation(host: SettingsHost, replace: boolean) {
   if (typeof window === "undefined") {
     return;
   }
-  const resolved = tabFromPath(window.location.pathname, host.basePath) ?? "chat";
+  const routeTab = tabFromPath(window.location.pathname, host.basePath) ?? "chat";
+  const resolved = resolveTabForMode(routeTab, host.uiMode);
   setTabFromRoute(host, resolved);
   syncUrlWithTab(host, resolved, replace);
 }
@@ -344,22 +372,23 @@ export function onPopState(host: SettingsHost) {
     });
   }
 
-  setTabFromRoute(host, resolved);
+  setTabFromRoute(host, resolveTabForMode(resolved, host.uiMode));
 }
 
 export function setTabFromRoute(host: SettingsHost, next: Tab) {
-  if (host.tab !== next) {
-    host.tab = next;
+  const resolved = resolveTabForMode(next, host.uiMode);
+  if (host.tab !== resolved) {
+    host.tab = resolved;
   }
-  if (next === "chat") {
+  if (resolved === "chat") {
     host.chatHasAutoScrolled = false;
   }
-  if (next === "logs") {
+  if (resolved === "logs") {
     startLogsPolling(host as unknown as Parameters<typeof startLogsPolling>[0]);
   } else {
     stopLogsPolling(host as unknown as Parameters<typeof stopLogsPolling>[0]);
   }
-  if (next === "debug") {
+  if (resolved === "debug") {
     startDebugPolling(host as unknown as Parameters<typeof startDebugPolling>[0]);
   } else {
     stopDebugPolling(host as unknown as Parameters<typeof stopDebugPolling>[0]);
@@ -414,6 +443,7 @@ export async function loadOverview(host: SettingsHost) {
     loadSessions(host as unknown as OpenClawApp),
     loadCronStatus(host as unknown as OpenClawApp),
     loadDebug(host as unknown as OpenClawApp),
+    loadPortalStackStatus(host as unknown as Parameters<typeof loadPortalStackStatus>[0]),
   ]);
 }
 

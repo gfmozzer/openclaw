@@ -618,6 +618,10 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
       clearInterval(this.intervalTimer);
       this.intervalTimer = null;
     }
+    if (this.bullmqSyncQueue) {
+      await this.bullmqSyncQueue.close().catch(() => undefined);
+      this.bullmqSyncQueue = null;
+    }
     if (this.watcher) {
       await this.watcher.close();
       this.watcher = null;

@@ -39,6 +39,11 @@ export type StatelessRuntimeDeps = {
   skillLoader: SkillLoader;
   toolBusDispatcher?: ToolBusDispatcher;
   auditEventStore?: AuditEventStore;
+  /**
+   * True when OPENCLAW_REDIS_URL is configured and the BullMQ/ioredis layer is available.
+   * Plans 2 (followup drain) and 4 (debounce) must check this before using createQueue().
+   */
+  redisAvailable: boolean;
 };
 
 export type StatelessBackendMode = "in-memory" | "s3" | "prisma";
@@ -73,7 +78,10 @@ function createSharedDeps() {
   const messageBus = redisConfig ? new RedisMessageBus(redisConfig) : new InMemoryMessageBus();
   const skillLoader = new NodeWorkspaceSkillLoader();
   const toolBusDispatcher = createHttpToolBusDispatcherFromEnv() ?? undefined;
-  return { schedulerOrchestrator, idempotencyStore, messageBus, skillLoader, toolBusDispatcher };
+  // redisAvailable signals that the BullMQ/ioredis layer (adapters/redis/) is usable.
+  // This uses the same env var as the existing node/redis-shared.ts for consistency.
+  const redisAvailable = Boolean((process.env.OPENCLAW_REDIS_URL ?? "").trim());
+  return { schedulerOrchestrator, idempotencyStore, messageBus, skillLoader, toolBusDispatcher, redisAvailable };
 }
 
 export function createStatelessRuntimeDeps(
@@ -194,6 +202,7 @@ export function createStatelessRuntimeDeps(
       skillLoader: shared.skillLoader,
       toolBusDispatcher: shared.toolBusDispatcher,
       auditEventStore: lazyAudit,
+      redisAvailable: shared.redisAvailable,
     };
   }
 
@@ -209,7 +218,7 @@ export function createStatelessRuntimeDeps(
       memoryStore: new S3MemoryStore(s3Config),
       ...shared,
       swarmDirectoryStore: new InMemorySwarmDirectoryStore(),
-    };
+    }; // redisAvailable is spread from shared
   }
 
   return {
@@ -217,5 +226,5 @@ export function createStatelessRuntimeDeps(
     memoryStore: new InMemoryMemoryStore(),
     ...shared,
     swarmDirectoryStore: new InMemorySwarmDirectoryStore(),
-  };
+  }; // redisAvailable is spread from shared
 }

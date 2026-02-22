@@ -1,6 +1,7 @@
 const KEY = "openclaw.control.settings.v1";
 
 import { isSupportedLocale } from "../i18n/index.ts";
+import type { UiMode } from "./navigation.ts";
 import type { ThemeMode } from "./theme.ts";
 
 export type UiSettings = {
@@ -14,6 +15,7 @@ export type UiSettings = {
   splitRatio: number; // Sidebar split ratio (0.4 to 0.7, default 0.6)
   navCollapsed: boolean; // Collapsible sidebar state
   navGroupsCollapsed: Record<string, boolean>; // Which nav groups are collapsed
+  uiMode: UiMode;
   locale?: string;
 };
 
@@ -29,6 +31,7 @@ export function loadSettings(): UiSettings {
     splitRatio: 0.6,
     navCollapsed: false,
     navGroupsCollapsed: {},
+    uiMode: "admin",
   };
 
   try {
@@ -74,6 +77,8 @@ export function loadSettings(): UiSettings {
         typeof parsed.navGroupsCollapsed === "object" && parsed.navGroupsCollapsed !== null
           ? parsed.navGroupsCollapsed
           : defaults.navGroupsCollapsed,
+      uiMode:
+        parsed.uiMode === "client" || parsed.uiMode === "admin" ? parsed.uiMode : defaults.uiMode,
       locale: isSupportedLocale(parsed.locale) ? parsed.locale : undefined,
     };
   } catch {

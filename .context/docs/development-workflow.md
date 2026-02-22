@@ -26,6 +26,26 @@ pnpm build
 pnpm test
 ```
 
+## Onboarding Enterprise (Checklist rapido)
+
+1. Copiar `.env.example` para `.env` e preencher:
+   - gateway token
+   - provider keys
+   - backend stateless (`prisma`/`s3`)
+   - redis + temporal (se distribuido)
+2. Subir infraestrutura local:
+   - Postgres (`docker-compose.postgres-local.yml`)
+   - Redis e MinIO (containers locais do stack)
+3. Rodar migracoes Prisma.
+4. Subir gateway e validar:
+   - `health`
+   - `system.metrics`
+   - `swarm.team.list`
+   - `cron.add` (com policy supervisor/worker)
+5. Conectar canais (se nao estiver em skip mode):
+   - Telegram/Slack por token
+   - WhatsApp pelo fluxo de pareamento do canal web
+
 ## Fork Workflow
 
 This is a fork of OpenClaw. The upstream sync strategy is documented in `.agent/workflows/update_clawdbot.md`:

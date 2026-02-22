@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { CURRENT_SESSION_VERSION, SessionManager } from "@mariozechner/pi-coding-agent";
 import { resolveSessionAgentId } from "../../agents/agent-scope.js";
@@ -44,6 +45,8 @@ import { formatForLog } from "../ws-log.js";
 import { injectTimestamp, timestampOptsFromConfig } from "./agent-timestamp.js";
 import { normalizeRpcAttachmentsToChatAttachments } from "./attachment-normalize.js";
 import type { GatewayRequestContext, GatewayRequestHandlers } from "./types.js";
+import type { IdempotencyScope } from "../stateless/contracts/idempotency-store.js";
+import type { MemoryScope } from "../stateless/contracts/memory-store.js";
 
 type TranscriptAppendResult = {
   ok: boolean;
@@ -328,6 +331,51 @@ function enforceChatHistoryFinalBudget(params: { messages: unknown[]; maxBytes: 
   return { messages: [], placeholderCount: 0 };
 }
 
+function resolveChatStatelessScope(params: {
+  context: GatewayRequestContext;
+  sessionKey: string;
+  cfg: ReturnType<typeof loadSessionEntry>["cfg"];
+}): MemoryScope | null {
+  const tenantId = params.context.tenantContext?.tenantId ?? params.context.enterprisePrincipal?.tenantId;
+  if (!tenantId) {
+    return null;
+  }
+  const agentId = resolveSessionAgentId({
+    sessionKey: params.sessionKey,
+    config: params.cfg,
+  });
+  return { tenantId, agentId, sessionKey: params.sessionKey };
+}
+
+function normalizeMemoryContentAsChatMessage(content: unknown, role: string, timestamp: number): unknown {
+  if (content && typeof content === "object") {
+    const asRecord = content as Record<string, unknown>;
+    if (typeof asRecord.role === "string" && "content" in asRecord) {
+      return asRecord;
+    }
+  }
+  return {
+    role,
+    timestamp,
+    content: [{ type: "text", text: typeof content === "string" ? content : JSON.stringify(content) }],
+  };
+}
+
+async function readChatHistoryFromStatelessMemory(params: {
+  context: GatewayRequestContext;
+  scope: MemoryScope;
+  limit: number;
+}): Promise<unknown[]> {
+  const store = params.context.memoryStore;
+  if (!store) {
+    return [];
+  }
+  const rows = await store.list(params.scope, { limit: params.limit });
+  return rows.map((row) =>
+    normalizeMemoryContentAsChatMessage(row.content, row.role, row.timestamp),
+  );
+}
+
 function resolveTranscriptPath(params: {
   sessionId: string;
   storePath: string | undefined;
@@ -394,10 +442,13 @@ function transcriptHasIdempotencyKey(transcriptPath: string, idempotencyKey: str
   }
 }
 
-function appendAssistantTranscriptMessage(params: {
+async function appendAssistantTranscriptMessage(params: {
+  context?: GatewayRequestContext;
+  cfg?: ReturnType<typeof loadSessionEntry>["cfg"];
   message: string;
   label?: string;
   sessionId: string;
+  sessionKey?: string;
   storePath: string | undefined;
   sessionFile?: string;
   agentId?: string;
@@ -408,7 +459,65 @@ function appendAssistantTranscriptMessage(params: {
     origin: AbortOrigin;
     runId: string;
   };
-}): TranscriptAppendResult {
+}): Promise<TranscriptAppendResult> {
+  if (params.context && params.sessionKey) {
+    const cfg = params.cfg ?? loadSessionEntry(params.sessionKey).cfg;
+    const scope = resolveChatStatelessScope({
+      context: params.context,
+      sessionKey: params.sessionKey,
+      cfg,
+    });
+    if (scope && params.context.memoryStore) {
+      const now = Date.now();
+      const labelPrefix = params.label ? `[${params.label}]\n\n` : "";
+      const usage = {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        totalTokens: 0,
+        cost: {
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          total: 0,
+        },
+      };
+      const messageBody: AppendMessageArg & Record<string, unknown> = {
+        role: "assistant",
+        content: [{ type: "text", text: `${labelPrefix}${params.message}` }],
+        timestamp: now,
+        stopReason: "stop",
+        usage,
+        api: "openai-responses",
+        provider: "openclaw",
+        model: "gateway-injected",
+        ...(params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : {}),
+        ...(params.abortMeta
+          ? {
+              openclawAbort: {
+                aborted: true,
+                origin: params.abortMeta.origin,
+                runId: params.abortMeta.runId,
+              },
+            }
+          : {}),
+      };
+      const appendId = randomUUID();
+      await params.context.memoryStore.append({
+        id: appendId,
+        scope,
+        role: "assistant",
+        content: messageBody,
+        timestamp: now,
+        runId: params.abortMeta?.runId,
+        metadata: params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : undefined,
+      });
+      return { ok: true, messageId: appendId, message: messageBody };
+    }
+  }
+
   const transcriptPath = resolveTranscriptPath({
     sessionId: params.sessionId,
     storePath: params.storePath,
@@ -512,20 +621,23 @@ function collectSessionAbortPartials(params: {
   return out;
 }
 
-function persistAbortedPartials(params: {
-  context: Pick<GatewayRequestContext, "logGateway">;
+async function persistAbortedPartials(params: {
+  context: GatewayRequestContext;
   sessionKey: string;
   snapshots: AbortedPartialSnapshot[];
-}) {
+}): Promise<void> {
   if (params.snapshots.length === 0) {
     return;
   }
-  const { storePath, entry } = loadSessionEntry(params.sessionKey);
+  const { cfg, storePath, entry } = loadSessionEntry(params.sessionKey);
   for (const snapshot of params.snapshots) {
     const sessionId = entry?.sessionId ?? snapshot.sessionId ?? snapshot.runId;
-    const appended = appendAssistantTranscriptMessage({
+    const appended = await appendAssistantTranscriptMessage({
+      context: params.context,
+      cfg,
       message: snapshot.text,
       sessionId,
+      sessionKey: params.sessionKey,
       storePath,
       sessionFile: entry?.sessionFile,
       createIfMissing: true,
@@ -563,7 +675,7 @@ function abortChatRunsForSessionKeyWithPartials(params: {
   sessionKey: string;
   abortOrigin: AbortOrigin;
   stopReason?: string;
-}) {
+}): Promise<ReturnType<typeof abortChatRunsForSessionKey>> {
   const snapshots = collectSessionAbortPartials({
     chatAbortControllers: params.context.chatAbortControllers,
     chatRunBuffers: params.context.chatRunBuffers,
@@ -575,13 +687,13 @@ function abortChatRunsForSessionKeyWithPartials(params: {
     stopReason: params.stopReason,
   });
   if (res.aborted) {
-    persistAbortedPartials({
+    return persistAbortedPartials({
       context: params.context,
       sessionKey: params.sessionKey,
       snapshots,
-    });
+    }).then(() => res);
   }
-  return res;
+  return Promise.resolve(res);
 }
 
 function nextChatSeq(context: { agentRunSeq: Map<string, number> }, runId: string) {
@@ -628,6 +740,29 @@ function broadcastChatError(params: {
   params.context.agentRunSeq.delete(params.runId);
 }
 
+async function publishChatBusEvent(params: {
+  context: GatewayRequestContext;
+  topic: string;
+  sessionKey: string;
+  payload: Record<string, unknown>;
+}): Promise<void> {
+  const tenantId =
+    params.context.tenantContext?.tenantId ?? params.context.enterprisePrincipal?.tenantId;
+  if (!tenantId || !params.context.messageBus) {
+    return;
+  }
+  await params.context.messageBus.publish({
+    id: randomUUID(),
+    topic: params.topic,
+    tenantId,
+    timestamp: Date.now(),
+    payload: {
+      sessionKey: params.sessionKey,
+      ...params.payload,
+    },
+  });
+}
+
 export const chatHandlers: GatewayRequestHandlers = {
   "chat.history": async ({ params, respond, context }) => {
     if (!validateChatHistoryParams(params)) {
@@ -646,13 +781,22 @@ export const chatHandlers: GatewayRequestHandlers = {
       limit?: number;
     };
     const { cfg, storePath, entry } = loadSessionEntry(sessionKey);
-    const sessionId = entry?.sessionId;
-    const rawMessages =
-      sessionId && storePath ? readSessionMessages(sessionId, storePath, entry?.sessionFile) : [];
+    const statelessScope = resolveChatStatelessScope({ context, sessionKey, cfg });
+    const sessionId = entry?.sessionId ?? statelessScope?.sessionKey;
     const hardMax = 1000;
     const defaultLimit = 200;
     const requested = typeof limit === "number" ? limit : defaultLimit;
     const max = Math.min(hardMax, requested);
+    const rawMessages =
+      statelessScope && context.memoryStore
+        ? await readChatHistoryFromStatelessMemory({
+            context,
+            scope: statelessScope,
+            limit: max,
+          })
+        : sessionId && storePath
+          ? readSessionMessages(sessionId, storePath, entry?.sessionFile)
+          : [];
     const sliced = rawMessages.length > max ? rawMessages.slice(-max) : rawMessages;
     const sanitized = stripEnvelopeFromMessages(sliced);
     const normalized = sanitizeChatHistoryMessages(sanitized);
@@ -697,7 +841,7 @@ export const chatHandlers: GatewayRequestHandlers = {
       verboseLevel,
     });
   },
-  "chat.abort": ({ params, respond, context }) => {
+  "chat.abort": async ({ params, respond, context }) => {
     if (!validateChatAbortParams(params)) {
       respond(
         false,
@@ -717,13 +861,23 @@ export const chatHandlers: GatewayRequestHandlers = {
     const ops = createChatAbortOps(context);
 
     if (!runId) {
-      const res = abortChatRunsForSessionKeyWithPartials({
+      const res = await abortChatRunsForSessionKeyWithPartials({
         context,
         ops,
         sessionKey: rawSessionKey,
         abortOrigin: "rpc",
         stopReason: "rpc",
       });
+      await publishChatBusEvent({
+        context,
+        topic: "chat.aborted",
+        sessionKey: rawSessionKey,
+        payload: {
+          runIds: res.runIds,
+          aborted: res.aborted,
+          origin: "rpc",
+        },
+      }).catch(() => {});
       respond(true, { ok: true, aborted: res.aborted, runIds: res.runIds });
       return;
     }
@@ -749,7 +903,7 @@ export const chatHandlers: GatewayRequestHandlers = {
       stopReason: "rpc",
     });
     if (res.aborted && partialText && partialText.trim()) {
-      persistAbortedPartials({
+      await persistAbortedPartials({
         context,
         sessionKey: rawSessionKey,
         snapshots: [
@@ -767,6 +921,16 @@ export const chatHandlers: GatewayRequestHandlers = {
       aborted: res.aborted,
       runIds: res.aborted ? [runId] : [],
     });
+    await publishChatBusEvent({
+      context,
+      topic: "chat.aborted",
+      sessionKey: rawSessionKey,
+      payload: {
+        runIds: res.aborted ? [runId] : [],
+        aborted: res.aborted,
+        origin: "rpc",
+      },
+    }).catch(() => {});
   },
   "chat.send": async ({ params, respond, context, client }) => {
     if (!validateChatSendParams(params)) {
@@ -842,6 +1006,16 @@ export const chatHandlers: GatewayRequestHandlers = {
     }
     const rawSessionKey = p.sessionKey;
     const { cfg, entry, canonicalKey: sessionKey } = loadSessionEntry(rawSessionKey);
+    const statelessScope = resolveChatStatelessScope({ context, sessionKey, cfg });
+    const idempotencyScope: IdempotencyScope | null =
+      statelessScope && context.idempotencyStore
+        ? {
+            tenantId: statelessScope.tenantId,
+            agentId: statelessScope.agentId,
+            operation: "chat.send",
+            key: p.idempotencyKey,
+          }
+        : null;
     const timeoutMs = resolveAgentTimeoutMs({
       cfg,
       overrideMs: p.timeoutMs,
@@ -902,15 +1076,57 @@ export const chatHandlers: GatewayRequestHandlers = {
     }
 
     if (stopCommand) {
-      const res = abortChatRunsForSessionKeyWithPartials({
+      const res = await abortChatRunsForSessionKeyWithPartials({
         context,
         ops: createChatAbortOps(context),
         sessionKey: rawSessionKey,
         abortOrigin: "stop-command",
         stopReason: "stop",
       });
+      await publishChatBusEvent({
+        context,
+        topic: "chat.aborted",
+        sessionKey: rawSessionKey,
+        payload: {
+          runIds: res.runIds,
+          aborted: res.aborted,
+          origin: "stop-command",
+        },
+      }).catch(() => {});
       respond(true, { ok: true, aborted: res.aborted, runIds: res.runIds });
       return;
+    }
+
+    if (idempotencyScope && context.idempotencyStore) {
+      const ttlMs = resolveChatRunExpiresAtMs({ now: Date.now(), timeoutMs }) - Date.now() + 60_000;
+      const reservation = await context.idempotencyStore.reserve(idempotencyScope, Math.max(60_000, ttlMs));
+      if (reservation === "exists") {
+        const existing = await context.idempotencyStore.get(idempotencyScope);
+        if (existing?.status === "completed") {
+          const payload =
+            (existing.response as Record<string, unknown> | undefined) ?? {
+              runId: p.idempotencyKey,
+              status: "ok",
+            };
+          respond(true, payload, undefined, { cached: true, runId: p.idempotencyKey });
+          return;
+        }
+        if (existing?.status === "failed") {
+          const err = errorShape(
+            ErrorCodes.UNAVAILABLE,
+            existing.error?.message
+              ? `${existing.error.message} (${existing.error.code})`
+              : "previous attempt failed",
+          );
+          respond(false, existing.response, err, { cached: true, runId: p.idempotencyKey });
+          return;
+        }
+        respond(true, { runId: p.idempotencyKey, status: "in_flight" as const }, undefined, {
+          cached: true,
+          runId: p.idempotencyKey,
+        });
+        return;
+      }
     }
 
     const cached = context.dedupe.get(`chat:${clientRunId}`);
@@ -939,10 +1155,45 @@ export const chatHandlers: GatewayRequestHandlers = {
         startedAtMs: now,
         expiresAtMs: resolveChatRunExpiresAtMs({ now, timeoutMs }),
       });
+      if (statelessScope && context.sessionStateStore) {
+        await context.sessionStateStore.upsert({
+          scope: {
+            tenantId: statelessScope.tenantId,
+            agentId: statelessScope.agentId,
+            sessionKey,
+          },
+          sessionId: entry?.sessionId ?? clientRunId,
+          updatedAt: now,
+        });
+      }
+      if (statelessScope && context.memoryStore) {
+        await context.memoryStore.append({
+          id: randomUUID(),
+          scope: statelessScope,
+          role: "user",
+          content: {
+            role: "user",
+            content: [{ type: "text", text: parsedMessage }],
+            timestamp: now,
+            idempotencyKey: clientRunId,
+          },
+          timestamp: now,
+          runId: clientRunId,
+          metadata: { idempotencyKey: clientRunId },
+        });
+      }
       const ackPayload = {
         runId: clientRunId,
         status: "started" as const,
       };
+      await publishChatBusEvent({
+        context,
+        topic: "chat.started",
+        sessionKey: rawSessionKey,
+        payload: {
+          runId: clientRunId,
+        },
+      }).catch(() => {});
       respond(true, ackPayload, undefined, { runId: clientRunId });
 
       const trimmedMessage = parsedMessage.trim();
@@ -1034,7 +1285,7 @@ export const chatHandlers: GatewayRequestHandlers = {
           onModelSelected,
         },
       })
-        .then(() => {
+        .then(async () => {
           if (!agentRunStarted) {
             const combinedReply = finalReplyParts
               .map((part) => part.trim())
@@ -1049,9 +1300,12 @@ export const chatHandlers: GatewayRequestHandlers = {
               const { storePath: latestStorePath, entry: latestEntry } =
                 loadSessionEntry(sessionKey);
               const sessionId = latestEntry?.sessionId ?? entry?.sessionId ?? clientRunId;
-              const appended = appendAssistantTranscriptMessage({
+              const appended = await appendAssistantTranscriptMessage({
+                context,
+                cfg,
                 message: combinedReply,
                 sessionId,
+                sessionKey,
                 storePath: latestStorePath,
                 sessionFile: latestEntry?.sessionFile,
                 agentId,
@@ -1081,14 +1335,29 @@ export const chatHandlers: GatewayRequestHandlers = {
               sessionKey: rawSessionKey,
               message,
             });
+            await publishChatBusEvent({
+              context,
+              topic: "chat.final",
+              sessionKey: rawSessionKey,
+              payload: {
+                runId: clientRunId,
+                hasMessage: Boolean(message),
+              },
+            }).catch(() => {});
           }
           context.dedupe.set(`chat:${clientRunId}`, {
             ts: Date.now(),
             ok: true,
             payload: { runId: clientRunId, status: "ok" as const },
           });
+          if (idempotencyScope && context.idempotencyStore) {
+            await context.idempotencyStore.complete(idempotencyScope, {
+              runId: clientRunId,
+              status: "ok" as const,
+            });
+          }
         })
-        .catch((err) => {
+        .catch(async (err) => {
           const error = errorShape(ErrorCodes.UNAVAILABLE, String(err));
           context.dedupe.set(`chat:${clientRunId}`, {
             ts: Date.now(),
@@ -1106,6 +1375,21 @@ export const chatHandlers: GatewayRequestHandlers = {
             sessionKey: rawSessionKey,
             errorMessage: String(err),
           });
+          await publishChatBusEvent({
+            context,
+            topic: "chat.error",
+            sessionKey: rawSessionKey,
+            payload: {
+              runId: clientRunId,
+              error: String(err),
+            },
+          }).catch(() => {});
+          if (idempotencyScope && context.idempotencyStore) {
+            await context.idempotencyStore.fail(idempotencyScope, {
+              code: ErrorCodes.UNAVAILABLE,
+              message: String(err),
+            });
+          }
         })
         .finally(() => {
           context.chatAbortControllers.delete(clientRunId);
@@ -1123,6 +1407,12 @@ export const chatHandlers: GatewayRequestHandlers = {
         payload,
         error,
       });
+      if (idempotencyScope && context.idempotencyStore) {
+        await context.idempotencyStore.fail(idempotencyScope, {
+          code: ErrorCodes.UNAVAILABLE,
+          message: String(err),
+        });
+      }
       respond(false, payload, error, {
         runId: clientRunId,
         error: formatForLog(err),
@@ -1147,19 +1437,23 @@ export const chatHandlers: GatewayRequestHandlers = {
       label?: string;
     };
 
-    // Load session to find transcript file
+    // Load session and prefer stateless memory when tenant scope is available.
     const rawSessionKey = p.sessionKey;
     const { cfg, storePath, entry } = loadSessionEntry(rawSessionKey);
-    const sessionId = entry?.sessionId;
-    if (!sessionId || !storePath) {
+    const statelessScope = resolveChatStatelessScope({ context, sessionKey: rawSessionKey, cfg });
+    const sessionId = entry?.sessionId ?? rawSessionKey;
+    if (!statelessScope && (!entry?.sessionId || !storePath)) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "session not found"));
       return;
     }
 
-    const appended = appendAssistantTranscriptMessage({
+    const appended = await appendAssistantTranscriptMessage({
+      context,
+      cfg,
       message: p.message,
       label: p.label,
       sessionId,
+      sessionKey: rawSessionKey,
       storePath,
       sessionFile: entry?.sessionFile,
       agentId: resolveSessionAgentId({ sessionKey: rawSessionKey, config: cfg }),
@@ -1187,6 +1481,15 @@ export const chatHandlers: GatewayRequestHandlers = {
     };
     context.broadcast("chat", chatPayload);
     context.nodeSendToSession(rawSessionKey, "chat", chatPayload);
+    await publishChatBusEvent({
+      context,
+      topic: "chat.injected",
+      sessionKey: rawSessionKey,
+      payload: {
+        runId: chatPayload.runId,
+        messageId: appended.messageId,
+      },
+    }).catch(() => {});
 
     respond(true, { ok: true, messageId: appended.messageId });
   },

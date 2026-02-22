@@ -1,0 +1,501 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/gfmoz/Documentos/apps_projects/openclaw[39m
+
+ [31m❯[39m src/auto-reply/reply/reply-flow.test.ts [2m([22m[2m80 tests[22m[2m | [22m[31m10 failed[39m[2m)[22m[33m 720049[2mms[22m[39m
+     [32m✓[39m converts CRLF to LF[32m 2[2mms[22m[39m
+     [32m✓[39m converts CR to LF[32m 0[2mms[22m[39m
+     [32m✓[39m preserves literal backslash-n sequences in Windows paths[32m 0[2mms[22m[39m
+     [32m✓[39m preserves backslash-n in messages containing Windows paths[32m 0[2mms[22m[39m
+     [32m✓[39m preserves multiple backslash-n sequences[32m 0[2mms[22m[39m
+     [32m✓[39m still normalizes actual CRLF while preserving backslash-n[32m 0[2mms[22m[39m
+     [32m✓[39m whatsapp group[32m 1[2mms[22m[39m
+     [32m✓[39m telegram group[32m 0[2mms[22m[39m
+     [32m✓[39m slack channel[32m 0[2mms[22m[39m
+     [32m✓[39m discord channel[32m 0[2mms[22m[39m
+     [32m✓[39m signal dm[32m 0[2mms[22m[39m
+     [32m✓[39m imessage group[32m 0[2mms[22m[39m
+     [32m✓[39m matrix channel[32m 0[2mms[22m[39m
+     [32m✓[39m msteams channel[32m 0[2mms[22m[39m
+     [32m✓[39m zalo dm[32m 0[2mms[22m[39m
+     [32m✓[39m zalouser group[32m 0[2mms[22m[39m
+     [32m✓[39m detects quick_replies directive[32m 0[2mms[22m[39m
+     [32m✓[39m detects location directive[32m 0[2mms[22m[39m
+     [32m✓[39m detects confirm directive[32m 0[2mms[22m[39m
+     [32m✓[39m detects buttons directive[32m 0[2mms[22m[39m
+     [32m✓[39m returns false for regular text[32m 0[2mms[22m[39m
+     [32m✓[39m returns false for similar but invalid patterns[32m 0[2mms[22m[39m
+     [32m✓[39m detects media_player directive[32m 0[2mms[22m[39m
+     [32m✓[39m detects event directive[32m 0[2mms[22m[39m
+     [32m✓[39m detects agenda directive[32m 0[2mms[22m[39m
+     [32m✓[39m detects device directive[32m 0[2mms[22m[39m
+     [32m✓[39m detects appletv_remote directive[32m 0[2mms[22m[39m
+       [32m✓[39m parses quick_replies and removes from text[32m 1[2mms[22m[39m
+       [32m✓[39m handles quick_replies in middle of text[32m 0[2mms[22m[39m
+       [32m✓[39m merges with existing quickReplies[32m 0[2mms[22m[39m
+       [32m✓[39m parses location with all fields[32m 0[2mms[22m[39m
+       [32m✓[39m ignores invalid coordinates[32m 0[2mms[22m[39m
+       [32m✓[39m does not override existing location[32m 0[2mms[22m[39m
+       [32m✓[39m parses simple confirm[32m 0[2mms[22m[39m
+       [32m✓[39m parses confirm with custom data[32m 0[2mms[22m[39m
+       [32m✓[39m parses buttons with message actions[32m 0[2mms[22m[39m
+       [32m✓[39m parses buttons with uri actions[32m 0[2mms[22m[39m
+       [32m✓[39m parses buttons with postback actions[32m 0[2mms[22m[39m
+       [32m✓[39m limits to 4 actions[32m 0[2mms[22m[39m
+       [32m✓[39m parses media_player with all fields[32m 0[2mms[22m[39m
+       [32m✓[39m parses media_player with minimal fields[32m 0[2mms[22m[39m
+       [32m✓[39m handles paused status[32m 0[2mms[22m[39m
+       [32m✓[39m parses event with all fields[32m 0[2mms[22m[39m
+       [32m✓[39m parses event with minimal fields[32m 0[2mms[22m[39m
+       [32m✓[39m parses agenda with multiple events[32m 0[2mms[22m[39m
+       [32m✓[39m parses agenda with events without times[32m 0[2mms[22m[39m
+       [32m✓[39m parses device with controls[32m 0[2mms[22m[39m
+       [32m✓[39m parses device with minimal fields[32m 0[2mms[22m[39m
+       [32m✓[39m parses appletv_remote with status[32m 0[2mms[22m[39m
+       [32m✓[39m parses appletv_remote with minimal fields[32m 0[2mms[22m[39m
+       [32m✓[39m handles text with no directives[32m 0[2mms[22m[39m
+       [32m✓[39m preserves other payload fields[32m 0[2mms[22m[39m
+[31m     [31m×[31m deduplicates messages with same Discord message_id[39m[32m 4[2mms[22m[39m
+[31m     [31m×[31m deduplicates exact prompt when routing matches and no message id[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m does not deduplicate across different providers without message id[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m can opt-in to prompt-based dedupe when message id is absent[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m does not collect when destinations differ[39m[33m 120001[2mms[22m[39m
+[31m     [31m×[31m collects when channel+destination match[39m[33m 120001[2mms[22m[39m
+[31m     [31m×[31m collects Slack messages in same thread and preserves string thread id[39m[33m 120001[2mms[22m[39m
+[31m     [31m×[31m does not collect Slack messages when thread ids differ[39m[33m 120001[2mms[22m[39m
+[31m     [31m×[31m retries collect-mode batches without losing queued items[39m[33m 120001[2mms[22m[39m
+[31m     [31m×[31m retries overflow summary delivery without losing dropped previews[39m[33m 120001[2mms[22m[39m
+     [32m✓[39m drops empty payloads and silent tokens without media[32m 2[2mms[22m[39m
+     [32m✓[39m strips heartbeat tokens and applies responsePrefix[32m 8[2mms[22m[39m
+     [32m✓[39m avoids double-prefixing and keeps media when heartbeat is the only text[32m 1[2mms[22m[39m
+     [32m✓[39m preserves ordering across tool, block, and final replies[32m 1[2mms[22m[39m
+     [32m✓[39m fires onIdle when the queue drains[32m 0[2mms[22m[39m
+     [32m✓[39m delays block replies after the first when humanDelay is natural[32m 4[2mms[22m[39m
+     [32m✓[39m uses custom bounds for humanDelay and clamps when max <= min[32m 1[2mms[22m[39m
+     [32m✓[39m defaults to off for Telegram[32m 0[2mms[22m[39m
+     [32m✓[39m defaults to off for Discord and Slack[32m 0[2mms[22m[39m
+     [32m✓[39m defaults to all when channel is unknown[32m 0[2mms[22m[39m
+     [32m✓[39m uses configured value when present[32m 0[2mms[22m[39m
+     [32m✓[39m uses chat-type replyToMode overrides for Slack when configured[32m 0[2mms[22m[39m
+     [32m✓[39m falls back to top-level replyToMode when no chat-type override is set[32m 0[2mms[22m[39m
+     [32m✓[39m uses legacy dm.replyToMode for direct messages when no chat-type override exists[32m 1[2mms[22m[39m
+     [32m✓[39m drops replyToId when mode is off[32m 0[2mms[22m[39m
+     [32m✓[39m keeps replyToId when mode is off and reply tags are allowed[32m 0[2mms[22m[39m
+     [32m✓[39m keeps replyToId when mode is all[32m 0[2mms[22m[39m
+     [32m✓[39m keeps only the first replyToId when mode is first[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m10 failed[39m[22m[2m | [22m[1m[32m70 passed[39m[22m[90m (80)[39m
+[2m     Errors [22m [1m[31m16 errors[39m[22m
+[2m   Start at [22m 21:26:51
+[2m   Duration [22m 736.32s[2m (transform 4.39s, setup 285ms, import 15.88s, tests 720.05s, environment 0ms)[22m
+
+\nnpm warn Unknown project config "allow-build-scripts". This will stop working in the next major version of npm.
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 10 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue deduplication[2m > [22mdeduplicates messages with same Discord message_id
+[31m[1mAssertionError[22m: expected Promise{…} to be true // Object.is equality[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+Promise {}
+
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m672:19[22m[39m
+    [90m670| [39m        prompt[33m:[39m [32m"[Discord Guild #test channel id:123] Hello"[39m[33m,[39m
+    [90m671| [39m        messageId[33m:[39m [32m"m1"[39m[33m,[39m
+    [90m672| [39m        originatingChannel[33m:[39m [32m"discord"[39m[33m,[39m
+    [90m   | [39m                  [31m^[39m
+    [90m673| [39m        originatingTo[33m:[39m [32m"channel:123"[39m[33m,[39m
+    [90m674| [39m      })[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue deduplication[2m > [22mdeduplicates exact prompt when routing matches and no message id
+[31m[1mAssertionError[22m: expected Promise{…} to be true // Object.is equality[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+Promise {}
+
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m725:19[22m[39m
+    [90m723| [39m      [34mcreateRun[39m({
+    [90m724| [39m        prompt[33m:[39m [32m"Hello world"[39m[33m,[39m
+    [90m725| [39m        originatingChannel[33m:[39m [32m"whatsapp"[39m[33m,[39m
+    [90m   | [39m                  [31m^[39m
+    [90m726| [39m        originatingTo[33m:[39m [32m"+1234567890"[39m[33m,[39m
+    [90m727| [39m      })[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue deduplication[2m > [22mdoes not deduplicate across different providers without message id
+[31m[1mAssertionError[22m: expected Promise{…} to be true // Object.is equality[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+Promise {}
+
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m770:19[22m[39m
+    [90m768| [39m      [34mcreateRun[39m({
+    [90m769| [39m        prompt[33m:[39m [32m"Same text"[39m[33m,[39m
+    [90m770| [39m        originatingChannel[33m:[39m [32m"whatsapp"[39m[33m,[39m
+    [90m   | [39m                  [31m^[39m
+    [90m771| [39m        originatingTo[33m:[39m [32m"+1234567890"[39m[33m,[39m
+    [90m772| [39m      })[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue deduplication[2m > [22mcan opt-in to prompt-based dedupe when message id is absent
+[31m[1mAssertionError[22m: expected Promise{…} to be true // Object.is equality[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+Promise {}
+
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m803:19[22m[39m
+    [90m801| [39m        prompt[33m:[39m [32m"Hello world"[39m[33m,[39m
+    [90m802| [39m        originatingChannel[33m:[39m [32m"whatsapp"[39m[33m,[39m
+    [90m803| [39m        originatingTo[33m:[39m [32m"+1234567890"[39m[33m,[39m
+    [90m   | [39m                  [31m^[39m
+    [90m804| [39m      })[33m,[39m
+    [90m805| [39m      settings[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue collect routing[2m > [22mdoes not collect when destinations differ
+[31m[1mError[22m: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m820:3[22m[39m
+    [90m818| [39m      [32m"prompt"[39m[33m,[39m
+    [90m819| [39m    )[33m;[39m
+    [90m820| [39m    [34mexpect[39m(second)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m   | [39m  [31m^[39m
+    [90m821| [39m  })[33m;[39m
+    [90m822| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue collect routing[2m > [22mcollects when channel+destination match
+[31m[1mError[22m: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m863:3[22m[39m
+    [90m861| [39m
+    [90m862| [39m    [34mprocessFollowupDrain[39m(key[33m,[39m runFollowup)[33m;[39m
+    [90m863| [39m    [35mawait[39m done[33m.[39mpromise[33m;[39m
+    [90m   | [39m  [31m^[39m
+    [90m864| [39m    [34mexpect[39m(calls[[34m0[39m][33m?.[39mprompt)[33m.[39m[34mtoBe[39m([32m"one"[39m)[33m;[39m
+    [90m865| [39m    [34mexpect[39m(calls[[34m1[39m][33m?.[39mprompt)[33m.[39m[34mtoBe[39m([32m"two"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue collect routing[2m > [22mcollects Slack messages in same thread and preserves string thread id
+[31m[1mError[22m: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m907:3[22m[39m
+    [90m905| [39m    [34mprocessFollowupDrain[39m(key[33m,[39m runFollowup)[33m;[39m
+    [90m906| [39m    [35mawait[39m done[33m.[39mpromise[33m;[39m
+    [90m907| [39m    expect(calls[0]?.prompt).toContain("[Queued messages while agent w…
+    [90m   | [39m  [31m^[39m
+    [90m908| [39m    [34mexpect[39m(calls[[34m0[39m][33m?.[39moriginatingChannel)[33m.[39m[34mtoBe[39m([32m"slack"[39m)[33m;[39m
+    [90m909| [39m    [34mexpect[39m(calls[[34m0[39m][33m?.[39moriginatingTo)[33m.[39m[34mtoBe[39m([32m"channel:A"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue collect routing[2m > [22mdoes not collect Slack messages when thread ids differ
+[31m[1mError[22m: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m952:3[22m[39m
+    [90m950| [39m
+    [90m951| [39m    [34mprocessFollowupDrain[39m(key[33m,[39m runFollowup)[33m;[39m
+    [90m952| [39m    [35mawait[39m done[33m.[39mpromise[33m;[39m
+    [90m   | [39m  [31m^[39m
+    [90m953| [39m    expect(calls[0]?.prompt).toContain("[Queued messages while agent w…
+    [90m954| [39m    [34mexpect[39m(calls[[34m0[39m][33m?.[39moriginatingThreadId)[33m.[39m[34mtoBe[39m([32m"1706000000.000001"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue collect routing[2m > [22mretries collect-mode batches without losing queued items
+[31m[1mError[22m: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m999:3[22m[39m
+    [90m997| [39m    [35mawait[39m done[33m.[39mpromise[33m;[39m
+    [90m998| [39m    [34mexpect[39m(calls[[34m0[39m][33m?.[39mprompt)[33m.[39m[34mtoBe[39m([32m"one"[39m)[33m;[39m
+    [90m999| [39m    [34mexpect[39m(calls[[34m1[39m][33m?.[39mprompt)[33m.[39m[34mtoBe[39m([32m"two"[39m)[33m;[39m
+    [90m   | [39m  [31m^[39m
+    [90m1000| [39m    [34mexpect[39m(calls[[34m0[39m][33m?.[39moriginatingThreadId)[33m.[39m[34mtoBe[39m([32m"1706000000.000001"[39m)[33m;[39m
+    [90m1001| [39m    [34mexpect[39m(calls[[34m1[39m][33m?.[39moriginatingThreadId)[33m.[39m[34mtoBe[39m([32m"1706000000.000002"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/auto-reply/reply/reply-flow.test.ts[2m > [22mfollowup queue collect routing[2m > [22mretries overflow summary delivery without losing dropped previews
+[31m[1mError[22m: Test timed out in 120000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m src/auto-reply/reply/reply-flow.test.ts:[2m1031:3[22m[39m
+    [90m1029| [39m
+    [90m1030| [39m    [34mprocessFollowupDrain[39m(key[33m,[39m runFollowup)[33m;[39m
+    [90m1031| [39m    [35mawait[39m done[33m.[39mpromise[33m;[39m
+    [90m   | [39m  [31m^[39m
+    [90m1032| [39m    [34mexpect[39m(calls[[34m0[39m][33m?.[39mprompt)[33m.[39m[34mtoContain[39m([32m"Queued #1\none"[39m)[33m;[39m
+    [90m1033| [39m    [34mexpect[39m(calls[[34m0[39m][33m?.[39mprompt)[33m.[39m[34mtoContain[39m([32m"Queued #2\ntwo"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 16 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m105:5[22m[39m
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mdoes not collect when destinations differ[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m105:5[22m[39m
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mdoes not collect when destinations differ[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m105:5[22m[39m
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mdoes not collect when destinations differ[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m105:5[22m[39m
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mdoes not collect when destinations differ[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m105:5[22m[39m
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mdoes not collect when destinations differ[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m105:5[22m[39m
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mdoes not collect when destinations differ[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcollects when channel+destination match[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcollects when channel+destination match[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcollects Slack messages in same thread and preserves string thread id[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcollects Slack messages in same thread and preserves string thread id[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mdoes not collect Slack messages when thread ids differ[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mdoes not collect Slack messages when thread ids differ[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mretries collect-mode batches without losing queued items[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mretries collect-mode batches without losing queued items[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mretries overflow summary delivery without losing dropped previews[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'items')[39m
+[36m [2m❯[22m Module.enqueueFollowupRun src/auto-reply/reply/queue/enqueue.ts:[2m41:53[22m[39m
+    [90m 39| [39m
+    [90m 40| [39m  [90m// Deduplicate: skip if the same message is already queued.[39m
+    [90m 41| [39m  [35mif[39m ([34mshouldSkipQueueItem[39m({ item[33m:[39m run[33m,[39m items[33m:[39m queue[33m.[39mitems[33m,[39m dedupe })) {
+    [90m   | [39m                                                    [31m^[39m
+    [90m 42| [39m    [35mreturn[39m [35mfalse[39m[33m;[39m
+    [90m 43| [39m  }
+
+[31mThis error originated in "[1msrc/auto-reply/reply/reply-flow.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mretries overflow summary delivery without losing dropped previews[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+

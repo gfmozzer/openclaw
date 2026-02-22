@@ -1,4 +1,5 @@
 import { diagnosticLogger as diag, logLaneDequeue, logLaneEnqueue } from "../logging/diagnostic.js";
+import { publishLaneDepth } from "./command-lane-metrics.js";
 import { CommandLane } from "./lanes.js";
 /**
  * Dedicated error type thrown when a queued command is rejected because
@@ -81,6 +82,7 @@ function drainLane(lane: string) {
         );
       }
       logLaneDequeue(lane, waitedMs, state.queue.length);
+      void publishLaneDepth(lane, state.queue.length + state.activeTaskIds.size);
       const taskId = nextTaskId++;
       const taskGeneration = state.generation;
       state.activeTaskIds.add(taskId);
@@ -144,7 +146,9 @@ export function enqueueCommandInLane<T>(
       warnAfterMs,
       onWait: opts?.onWait,
     });
-    logLaneEnqueue(cleaned, state.queue.length + state.activeTaskIds.size);
+    const depth = state.queue.length + state.activeTaskIds.size;
+    logLaneEnqueue(cleaned, depth);
+    void publishLaneDepth(cleaned, depth);
     drainLane(cleaned);
   });
 }
@@ -187,6 +191,7 @@ export function clearCommandLane(lane: string = CommandLane.Main) {
   for (const entry of pending) {
     entry.reject(new CommandLaneClearedError(cleaned));
   }
+  void publishLaneDepth(cleaned, state.activeTaskIds.size);
   return removed;
 }
 

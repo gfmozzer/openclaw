@@ -62,13 +62,14 @@ describe("trigger handling", () => {
           blockReplyBreak: "text_end",
         },
       };
-      enqueueFollowupRun(
+      const settings = { mode: "collect", debounceMs: 0, cap: 20, dropPolicy: "summarize" } as const;
+      await enqueueFollowupRun(
         targetSessionKey,
         followupRun,
-        { mode: "collect", debounceMs: 0, cap: 20, dropPolicy: "summarize" },
+        settings,
         "none",
       );
-      expect(getFollowupQueueDepth(targetSessionKey)).toBe(1);
+      expect(await getFollowupQueueDepth(targetSessionKey, settings)).toBe(1);
 
       const res = await getReplyFromConfig(
         {
@@ -92,7 +93,7 @@ describe("trigger handling", () => {
       expect(getAbortEmbeddedPiRunMock()).toHaveBeenCalledWith(targetSessionId);
       const store = loadSessionStore(storePath);
       expect(store[targetSessionKey]?.abortedLastRun).toBe(true);
-      expect(getFollowupQueueDepth(targetSessionKey)).toBe(0);
+      expect(await getFollowupQueueDepth(targetSessionKey, settings)).toBe(0);
     });
   });
   it("applies native /model to the target session", async () => {

@@ -490,6 +490,60 @@ export type CronStatus = {
   enabled: boolean;
   jobs: number;
   nextWakeAtMs?: number | null;
+  orchestrationMode?: string | null;
+};
+
+export type EnterpriseMetricsSnapshot = {
+  generatedAt: number;
+  counters: Record<string, number>;
+};
+
+export type PortalStackProbe = {
+  configured: boolean;
+  state: "ok" | "error" | "skipped";
+  detail?: string;
+};
+
+export type PortalStackStatus = {
+  statelessBackend: string;
+  probes: {
+    redis: PortalStackProbe;
+    s3: PortalStackProbe;
+    postgres: PortalStackProbe;
+  };
+};
+
+export type PortalContractPermissionsHint = {
+  tenantId?: string;
+  requiredScopes?: string[];
+};
+
+export type PortalContractEnvelope = {
+  type: string;
+  specVersion?: string;
+  renderer?: string;
+  data?: unknown;
+  layout?: unknown;
+  permissionsHint?: PortalContractPermissionsHint;
+};
+
+export type PortalContract = {
+  specVersion: string;
+  chatFirst: boolean;
+  richBlocks?: {
+    supportedTypes?: string[];
+    envelope?: PortalContractEnvelope;
+    allowedRenderers?: string[];
+    htmlPolicy?: {
+      sandboxed?: boolean;
+      allowScripts?: boolean;
+    };
+  };
+  asyncResume?: {
+    transport?: string;
+    callbackMethod?: string;
+    pullMethod?: string;
+  };
 };
 
 export type CronRunLogEntry = {
@@ -550,6 +604,12 @@ export type SkillStatusReport = {
   workspaceDir: string;
   managedSkillsDir: string;
   skills: SkillStatusEntry[];
+  adapter?: {
+    mode: "remote" | "local";
+    transport: string;
+    endpointConfigured: boolean;
+    manifestsLoaded: number;
+  };
 };
 
 export type StatusSummary = Record<string, unknown>;

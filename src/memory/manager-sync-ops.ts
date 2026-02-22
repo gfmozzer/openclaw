@@ -76,6 +76,10 @@ const IGNORED_MEMORY_WATCH_DIR_NAMES = new Set([
 
 const log = createSubsystemLogger("memory");
 
+function isRedisAvailable(): boolean {
+  return Boolean((process.env.OPENCLAW_REDIS_URL ?? "").trim());
+}
+
 function shouldIgnoreMemoryWatchPath(watchPath: string): boolean {
   const normalized = path.normalize(watchPath);
   const parts = normalized.split(path.sep).map((segment) => segment.trim().toLowerCase());
@@ -120,6 +124,7 @@ export abstract class MemoryManagerSyncOps {
   protected sessionUnsubscribe: (() => void) | null = null;
   protected fallbackReason?: string;
   protected intervalTimer: NodeJS.Timeout | null = null;
+  protected bullmqSyncQueue: import("bullmq").Queue | null = null;
   protected closed = false;
   protected dirty = false;
   protected sessionsDirty = false;
@@ -581,11 +586,37 @@ export abstract class MemoryManagerSyncOps {
       return;
     }
     const ms = minutes * 60 * 1000;
+    if (isRedisAvailable()) {
+      void this.setupBullMqMemorySync(ms).catch((err) => {
+        log.warn(`memory sync: BullMQ setup failed, falling back to setInterval: ${String(err)}`);
+        this.startLocalSyncInterval(ms);
+      });
+    } else {
+      this.startLocalSyncInterval(ms);
+    }
+  }
+
+  private startLocalSyncInterval(ms: number): void {
+    if (this.intervalTimer) {
+      return;
+    }
     this.intervalTimer = setInterval(() => {
       void this.sync({ reason: "interval" }).catch((err) => {
         log.warn(`memory sync failed (interval): ${String(err)}`);
       });
     }, ms);
+  }
+
+  private async setupBullMqMemorySync(ms: number): Promise<void> {
+    const { createQueue } = await import("../gateway/stateless/adapters/redis/bullmq-queue-factory.js");
+    const queue = createQueue("memory-sync");
+    const jobId = `memory-sync:${this.agentId}`;
+    await queue.add("memory-sync-interval", { agentId: this.agentId }, {
+      repeat: { every: ms },
+      jobId,
+    });
+    this.bullmqSyncQueue = queue;
+    log.info(`memory sync: registered BullMQ repeatable job ${jobId} every ${ms}ms`);
   }
 
   private scheduleWatchSync() {

@@ -128,10 +128,10 @@ img.chat-avatar {
   position: relative;
   display: inline-block;
   border: 1px solid transparent;
-  background: var(--card);
-  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--card) 90%, transparent);
+  border-radius: calc(var(--radius-lg) + 2px);
   padding: 10px 14px;
-  box-shadow: none;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16);
   transition:
     background 150ms ease-out,
     border-color 150ms ease-out;
@@ -250,22 +250,22 @@ img.chat-avatar {
 }
 
 .chat-bubble:hover {
-  background: var(--bg-hover);
+  background: color-mix(in oklab, var(--bg-hover) 82%, transparent);
 }
 
 /* User bubbles have different styling */
 .chat-group.user .chat-bubble {
-  background: var(--accent-subtle);
+  background: color-mix(in oklab, var(--accent-subtle) 88%, transparent);
   border-color: transparent;
 }
 
 :root[data-theme="light"] .chat-group.user .chat-bubble {
-  border-color: rgba(234, 88, 12, 0.2);
-  background: rgba(251, 146, 60, 0.12);
+  border-color: color-mix(in oklab, var(--accent) 28%, var(--border));
+  background: color-mix(in oklab, var(--accent-subtle) 74%, #fff);
 }
 
 .chat-group.user .chat-bubble:hover {
-  background: rgba(255, 77, 77, 0.15);
+  background: color-mix(in oklab, var(--accent-subtle) 96%, transparent);
 }
 
 /* Streaming animation */

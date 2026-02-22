@@ -58,6 +58,7 @@ import {
 } from "../../protocol/index.js";
 import { MAX_BUFFERED_BYTES, MAX_PAYLOAD_BYTES, TICK_INTERVAL_MS } from "../../server-constants.js";
 import { handleGatewayRequest } from "../../server-methods.js";
+import { resolveEnterpriseIdentityFromClient } from "../../server-methods/enterprise-principal.js";
 import type { GatewayRequestContext, GatewayRequestHandlers } from "../../server-methods/types.js";
 import { formatError } from "../../server-utils.js";
 import { formatForLog, logWs } from "../../ws-log.js";
@@ -1056,13 +1057,18 @@ export function attachGatewayWsMessageHandler(params: {
       };
 
       void (async () => {
+        const requestContext: GatewayRequestContext = {
+          ...buildRequestContext(),
+          enterprisePrincipal:
+            resolveEnterpriseIdentityFromClient({ client, connId }) ?? undefined,
+        };
         await handleGatewayRequest({
           req,
           respond,
           client,
           isWebchatConnect,
           extraHandlers,
-          context: buildRequestContext(),
+          context: requestContext,
         });
       })().catch((err) => {
         logGateway.error(`request handler failed: ${formatForLog(err)}`);

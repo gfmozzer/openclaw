@@ -379,7 +379,7 @@ export async function runReplyAgent(params: {
     });
 
     if (runOutcome.kind === "final") {
-      return finalizeWithFollowup(runOutcome.payload, queueKey, runFollowupTurn);
+      return finalizeWithFollowup(runOutcome.payload, queueKey);
     }
 
     const {
@@ -492,7 +492,7 @@ export async function runReplyAgent(params: {
     // Otherwise, a late typing trigger (e.g. from a tool callback) can outlive the run and
     // keep the typing indicator stuck.
     if (payloadArray.length === 0) {
-      return finalizeWithFollowup(undefined, queueKey, runFollowupTurn);
+      return finalizeWithFollowup(undefined, queueKey);
     }
 
     const payloadResult = buildReplyPayloads({
@@ -516,7 +516,7 @@ export async function runReplyAgent(params: {
     didLogHeartbeatStrip = payloadResult.didLogHeartbeatStrip;
 
     if (replyPayloads.length === 0) {
-      return finalizeWithFollowup(undefined, queueKey, runFollowupTurn);
+      return finalizeWithFollowup(undefined, queueKey);
     }
 
     const successfulCronAdds = runResult.successfulCronAdds ?? 0;
@@ -720,8 +720,7 @@ export async function runReplyAgent(params: {
 
     return finalizeWithFollowup(
       finalPayloads.length === 1 ? finalPayloads[0] : finalPayloads,
-      queueKey,
-      runFollowupTurn,
+      queueKey
     );
   } finally {
     blockReplyPipeline?.stop();
