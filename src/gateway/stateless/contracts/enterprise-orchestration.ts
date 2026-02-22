@@ -1,4 +1,4 @@
-export type EnterpriseRole = "supervisor" | "worker" | "admin";
+export type EnterpriseRole = "admin" | "supervisor" | "worker" | "employee";
 
 export type EnterpriseScope =
   | "jobs:schedule:self"
@@ -12,6 +12,45 @@ export type EnterpriseScope =
   | "memory:read:self"
   | "memory:read:team";
 
+export const DEFAULT_ROLE_SCOPES: Record<EnterpriseRole, readonly EnterpriseScope[]> = {
+  admin: [
+    "jobs:schedule:self",
+    "jobs:schedule:team",
+    "jobs:cancel:self",
+    "jobs:cancel:team",
+    "swarm:read",
+    "swarm:write",
+    "skills:invoke",
+    "skills:invoke:finance",
+    "memory:read:self",
+    "memory:read:team",
+  ],
+  supervisor: [
+    "jobs:schedule:self",
+    "jobs:schedule:team",
+    "jobs:cancel:self",
+    "jobs:cancel:team",
+    "swarm:read",
+    "swarm:write",
+    "skills:invoke",
+    "memory:read:self",
+    "memory:read:team",
+  ],
+  worker: [
+    "jobs:schedule:self",
+    "jobs:cancel:self",
+    "swarm:read",
+    "skills:invoke",
+    "memory:read:self",
+  ],
+  employee: [
+    "jobs:schedule:self",
+    "jobs:cancel:self",
+    "memory:read:self",
+    "skills:invoke",
+  ],
+};
+
 export type EnterpriseIdentity = {
   tenantId: string;
   requesterId: string;
@@ -23,7 +62,26 @@ export type EnterpriseErrorCode =
   | "UNAUTHORIZED_REQUESTER"
   | "FORBIDDEN_SCOPE"
   | "CROSS_TENANT_FORBIDDEN"
-  | "WORKFLOW_CONTEXT_MISSING";
+  | "WORKFLOW_CONTEXT_MISSING"
+  // Plan 2: Delegation and Execution Routing Errors
+  | "DELEGATION_DENIED"
+  | "WORKER_NOT_IN_TEAM"
+  | "WORKER_CANNOT_DELEGATE"
+  | "SCHEDULE_TEAM_DENIED"
+  | "INSUFFICIENT_SCOPES"
+  | "TARGET_ROLE_INVALID"
+  | "CROSS_TENANT_DELEGATION_FORBIDDEN"
+  | "EXECUTION_MODE_UNAVAILABLE"
+  | "WORKER_UNAVAILABLE"
+  | "WORKER_NOT_FOUND"
+  | "EXECUTION_TIMEOUT"
+  | "RATE_LIMITED"
+  | "QUEUE_FULL"
+  | "WORKFLOW_NOT_FOUND"
+  | "INVALID_DELEGATION_CONTEXT"
+  | "SKILL_NOT_ALLOWED"
+  | "PROVIDER_CONFIG_MISSING"
+  | "INTERNAL_ERROR";
 
 export type EnterpriseError = {
   code: EnterpriseErrorCode;
@@ -114,4 +172,3 @@ export type SwarmDirectoryListRequest = {
   identity: EnterpriseIdentity;
   tenantId: string;
 };
-

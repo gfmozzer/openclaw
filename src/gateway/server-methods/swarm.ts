@@ -4,7 +4,7 @@ import {
 } from "../protocol/index.js";
 import { authorizeEnterpriseScope } from "../stateless/enterprise-authorization.js";
 import type { SwarmTeamDefinition, SwarmWorkerMember } from "../stateless/contracts/index.js";
-import type { EnterpriseScope } from "../stateless/contracts/enterprise-orchestration.js";
+import type { EnterpriseIdentity, EnterpriseScope } from "../stateless/contracts/enterprise-orchestration.js";
 import type { GatewayRequestHandlers } from "./types.js";
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -211,4 +211,92 @@ export const swarmHandlers: GatewayRequestHandlers = {
     const removed = await context.swarmDirectoryStore.delete({ tenantId, teamId });
     respond(true, { ok: true, removed }, undefined);
   },
+  "swarm.worker.validate": async ({ params, respond, context }) => {
+    if (!context.swarmDirectoryStore) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "swarm directory store is not configured"));
+      return;
+    }
+    const record = asRecord(params);
+    if (!record) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "invalid swarm.worker.validate params"));
+      return;
+    }
+    const identity = context.enterprisePrincipal ?? null;
+    const tenantId = nonEmptyString(record.tenantId) ?? identity?.tenantId ?? null;
+    const workerAgentId = nonEmptyString(record.workerAgentId);
+    const supervisorAgentId = nonEmptyString(record.supervisorAgentId);
+    if (!identity || !tenantId || !workerAgentId) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing authenticated principal, tenantId or workerAgentId"));
+      return;
+    }
+    const auth = authorizeEnterpriseScope({
+      identity,
+      requiredScope: "swarm:read",
+      tenantId,
+    });
+    if (!auth.ok) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.FORBIDDEN, auth.error.message, {
+          details: { code: auth.error.code, ...auth.error.details },
+        }),
+      );
+      return;
+    }
+
+    // Plan 2: Validação de delegação de worker
+    // Se supervisorAgentId fornecido, verifica se worker está no time dele
+    const effectiveSupervisorId = supervisorAgentId ?? (identity as EnterpriseIdentity).requesterId;
+    const canDelegate = await validateWorkerDelegation({
+      store: context.swarmDirectoryStore,
+      tenantId,
+      supervisorAgentId: effectiveSupervisorId,
+      workerAgentId,
+      requesterRole: (identity as EnterpriseIdentity).role,
+    });
+
+    respond(true, {
+      valid: canDelegate.valid,
+      workerAgentId,
+      supervisorAgentId: effectiveSupervisorId,
+      teamId: canDelegate.teamId,
+      reason: canDelegate.reason,
+    }, undefined);
+  },
 };
+
+// Plan 2: Helper para validar delegação de worker
+async function validateWorkerDelegation(params: {
+  store: NonNullable<import("./types.js").GatewayRequestContext["swarmDirectoryStore"]>;
+  tenantId: string;
+  supervisorAgentId: string;
+  workerAgentId: string;
+  requesterRole: EnterpriseIdentity["role"];
+}): Promise<{ valid: boolean; teamId?: string; reason?: string }> {
+  // Admin pode delegar para qualquer worker do tenant
+  if (params.requesterRole === "admin") {
+    const teams = await params.store.list({ tenantId: params.tenantId });
+    for (const team of teams) {
+      const workerExists = team.workers.some((w) => w.agentId === params.workerAgentId);
+      if (workerExists) {
+        return { valid: true, teamId: team.teamId };
+      }
+    }
+    return { valid: true, reason: "admin can delegate to any worker in tenant" };
+  }
+
+  // Supervisor só pode delegar para workers do próprio time
+  const teams = await params.store.list({ tenantId: params.tenantId });
+  for (const team of teams) {
+    if (team.supervisorAgentId === params.supervisorAgentId) {
+      const workerExists = team.workers.some((w) => w.agentId === params.workerAgentId);
+      if (workerExists) {
+        return { valid: true, teamId: team.teamId };
+      }
+      return { valid: false, teamId: team.teamId, reason: "worker not in supervisor team" };
+    }
+  }
+
+  return { valid: false, reason: "supervisor has no team in tenant" };
+}

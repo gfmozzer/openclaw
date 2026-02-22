@@ -30,13 +30,73 @@ model Tenant {
   roles              Role[]
   userRoles          UserRole[]
   swarmMemberships   SwarmMembership[]
+  enterprisePrincipals EnterprisePrincipal[]
+  channelBindings    ChannelIdentityBinding[]
+  enterpriseGrants   EnterpriseGrant[]
 
   @@map("tenants")
 }
 
 // ============================================================================
-// 2. IDENTITY AND RBAC (Workflow 12)
+// 2. IDENTITY AND RBAC (Workflow 12 & Enterprise Plan 1)
 // ============================================================================
+
+model EnterprisePrincipal {
+  id          String   @id @default(uuid())
+  tenantId    String
+  principalId String
+  role        String
+  status      String   @default("active")
+  attributes  Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  channelBindings ChannelIdentityBinding[]
+  grants          EnterpriseGrant[]
+
+  @@unique([tenantId, principalId])
+  @@index([tenantId, role])
+  @@map("enterprise_principals")
+}
+
+model ChannelIdentityBinding {
+  id          String   @id @default(uuid())
+  tenantId    String
+  channelId   String
+  accountId   String
+  subjectId   String
+  principalId String
+
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  principal   EnterprisePrincipal @relation(fields: [principalId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, channelId, accountId, subjectId])
+  @@index([tenantId, principalId])
+  @@map("channel_identity_bindings")
+}
+
+model EnterpriseGrant {
+  id          String   @id @default(uuid())
+  tenantId    String
+  principalId String
+  resource    String
+  action      String
+  attributes  Json?
+
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  principal   EnterprisePrincipal @relation(fields: [principalId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, principalId, resource, action])
+  @@map("enterprise_grants")
+}
 
 model User {
   id        String   @id @default(uuid())

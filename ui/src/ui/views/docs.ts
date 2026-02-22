@@ -20,7 +20,31 @@ export function renderDocsView(props: DocsViewProps) {
     "schedule": { "kind": "every", "everyMs": 86400000 },
     "sessionTarget": "isolated",
     "wakeMode": "now",
-    "payload": { "kind": "agentTurn", "message": "Gerar relatório diário" }
+  "payload": { "kind": "agentTurn", "message": "Gerar relatório diário" }
+  }
+}`;
+  const trustedFrontdoorExample = `{
+  "method": "chat.send",
+  "params": {
+    "sessionKey": "tenant-a:user-123",
+    "message": "Resumo comercial da semana",
+    "requestContext": {
+      "requestSource": "trusted_frontdoor_api",
+      "trustedFrontdoor": {
+        "frontdoorId": "crm-main",
+        "claims": {
+          "tenantId": "tenant-a",
+          "principalId": "user-123",
+          "issuedAt": 1760000000000,
+          "expiresAt": 1760000060000,
+          "allowedOverrideFields": ["model", "skillAllowlist", "optimizationMode"]
+        }
+      }
+    },
+    "overrides": {
+      "optimizationMode": "economy",
+      "skillAllowlist": ["sales_report"]
+    }
   }
 }`;
   return html`
@@ -30,6 +54,36 @@ export function renderDocsView(props: DocsViewProps) {
       <div class="callout" style="margin-top: 12px;">
         ${t("docsPage.hint")}
       </div>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <div class="card-title">Enterprise Guides (Local)</div>
+      <div class="card-sub">
+        Guias operacionais mantidos em <span class="mono">.context/docs</span> para acompanhar
+        roadmap/estado do projeto e integração segura de overrides.
+      </div>
+      <div class="list" style="margin-top: 10px;">
+        <div class="list-item">
+          <div class="list-main">
+            <div class="list-title">Project Status & Roadmap Guide</div>
+            <div class="list-sub mono">.context/docs/project-status-roadmap-guide.md</div>
+            <div class="list-sub">
+              Diferença entre status operacional no frontend e status real dos planos/workflows.
+            </div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-main">
+            <div class="list-title">Trusted Frontdoor Overrides Guide</div>
+            <div class="list-sub mono">.context/docs/trusted-frontdoor-overrides-guide.md</div>
+            <div class="list-sub">
+              Como enviar overrides (fallback parcial + modo economia) via frontdoor confiável.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-sub" style="margin-top: 12px;">Payload de exemplo (trusted frontdoor)</div>
+      <pre class="code-block" style="margin-top: 8px;"><code>${trustedFrontdoorExample}</code></pre>
     </section>
 
     <section class="card" style="margin-top: 16px;">

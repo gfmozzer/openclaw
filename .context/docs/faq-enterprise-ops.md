@@ -80,3 +80,47 @@ scaffoldVersion: "2.0.0"
 - Backend: `OPENCLAW_PROVIDERS_RPC_ENABLED=0` desativa metodos `providers.*`.
 - Frontend: `VITE_OPENCLAW_PROVIDERS_UI_ENABLED=0` remove a aba `Providers`.
 - O fluxo legado (`/config` raw + `models.providers.*`) continua disponivel.
+
+## 13) Como integrar uma API/CRM propria (trusted frontdoor) com overrides?
+- Fluxo recomendado:
+  1. Canal/Webhook bate na **sua API** (CRM/frontdoor), nao direto no OpenClaw.
+  2. Sua API resolve identidade corporativa (telefone/chatId -> principal, role, entitlements).
+  3. Sua API chama `chat.send` com `requestContext.requestSource=trusted_frontdoor_api`.
+  4. Sua API envia `requestContext.trustedFrontdoor.claims` + `overrides` (patch parcial).
+- O gateway aplica policy por origem e fallback automatico nos campos ausentes.
+- Ver guia detalhado: `trusted-frontdoor-overrides-guide.md`.
+
+## 14) Como funciona fallback nos overrides?
+- `chat.send.params.overrides` e um **patch parcial**:
+  - campo enviado e permitido => sobrescreve
+  - campo ausente => usa default da instancia/agente/sessao
+- Isso evita repetir toda configuracao a cada request.
+
+## 15) Posso mandar `skillAllowlist` por override?
+- Sim, via origem trusted (`trusted_frontdoor_api`) e sujeito a policy.
+- `skillAllowlist` por request **nao cria permissao nova**.
+- Semantica: ele atua como limitador; o resultado efetivo deve ser interseccao com RBAC/ABAC/entitlements e defaults do agente.
+- Em `channel_direct`, o baseline atual bloqueia `skillAllowlist` por padrao.
+
+## 16) Como configurar "modo economia" sem modelo local?
+- Use `overrides.optimizationMode="economy"` como **hint/politica**, nao como regra fixa no core.
+- Combine com:
+  - `contextPolicy="lean"` (contexto magro)
+  - `routingHints` (prefer fast/cheap, allow escalation)
+  - `budgetPolicyRef` (controle de gasto no middleware/frontdoor)
+- Mesmo sem modelo local, voce pode economizar com:
+  - roteamento para modelos remotos mais baratos
+  - heuristicas antes de chamar modelo caro
+  - contexto magro
+  - tool-first para consultas deterministicas
+
+## 17) O que acontece se o provider nao suportar uma feature de otimizacao?
+- A estrategia recomendada e **degradacao graciosa**:
+  - manter a requisicao
+  - ignorar/ajustar o hint nao suportado
+  - auditar/metrificar quando relevante
+- Ex.: prompt caching explicitamente suportado em alguns providers e implicito/ausente em outros.
+
+## 18) O canal direto (WhatsApp/Telegram) pode usar overrides sensiveis?
+- Baseline atual: **nao** para BYOK (`apiKey`, `authProfileId`) e nao para capability/optimization overrides sensiveis.
+- Se voce quiser expor algo como "modo economico" ao usuario final, isso deve passar por policy explicita (futuro), de preferencia via frontdoor.

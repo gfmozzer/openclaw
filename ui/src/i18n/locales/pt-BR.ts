@@ -162,6 +162,36 @@ export const pt_BR: TranslationMap = {
     policyQ: "Worker pode agendar job para outro worker?",
     policyA:
       "Não. A política atual permite worker agendar só para si; supervisor pode agendar para si e workers do time.",
+    overridesSectionTitle: "Overrides & Economia",
+    overridesSectionSub:
+      "Integração recomendada com frontdoor (CRM/API própria), fallback de overrides e modo economia parametrizável.",
+    frontdoorQ: "Como integrar minha API/CRM (trusted frontdoor) com o bot?",
+    frontdoorA:
+      "O fluxo recomendado é: Canal/Webhook -> sua API/CRM -> chat.send. Sua API resolve identidade/entitlements e envia requestContext.requestSource=trusted_frontdoor_api + claims + overrides (patch parcial).",
+    overrideFallbackQ: "Como funciona fallback dos overrides?",
+    overrideFallbackA:
+      "Overrides são patch parcial: campo enviado e permitido sobrescreve; campo ausente usa default da instância/agente/sessão. Não é preciso repetir toda configuração em cada requisição.",
+    skillAllowlistQ: "Posso mandar skillAllowlist por override?",
+    skillAllowlistA:
+      "Sim, pela origem trusted e sujeito à policy. skillAllowlist não cria permissão nova; ele atua como limitador e deve ser intersectado com RBAC/ABAC/entitlements e defaults do agente.",
+    economyModeQ: "Como configurar modo economia sem modelo local?",
+    economyModeA:
+      "Use optimizationMode=economy como hint, combinado com contextPolicy=lean, routingHints e budgetPolicyRef. Mesmo sem modelo local, é possível economizar com roteamento para modelos remotos baratos, heurísticas e tool-first.",
+    providerCapabilityQ: "E se o provider não suportar uma otimização?",
+    providerCapabilityA:
+      "A estratégia recomendada é degradação graciosa: manter a requisição, ignorar/ajustar o hint não suportado e auditar/metrificar quando necessário.",
+    statusSectionTitle: "Status do Projeto & Roadmap",
+    statusSectionSub:
+      "Como ler o status operacional exibido no frontend e onde acompanhar o roadmap/plano de engenharia.",
+    frontendStatusQ: "O frontend mostra o status real do projeto?",
+    frontendStatusA:
+      "Parcialmente. Ele mostra bem o status operacional/runtime (health, stack, drivers, jobs, swarm), mas não mostra o progresso dos planos/workflows de desenvolvimento.",
+    roadmapSourceQ: "Onde acompanho o roadmap e os planos em andamento?",
+    roadmapSourceA:
+      "Acompanhe pelos arquivos em .context/plans (especialmente o master plan) e pelos outputs em .agent/workflows/*.output.md. O documento 'Project Status & Roadmap Guide' consolida como interpretar isso.",
+    completedBaselineQ: "O que significa 'concluído baseline'?",
+    completedBaselineA:
+      "Significa que o fluxo principal, contratos, testes focados e documentação operacional foram entregues. Hardening e integrações avançadas podem continuar como follow-ups sem bloquear o progresso do programa.",
   },
   cronPage: {
     consoleTitle: "Console de Jobs",

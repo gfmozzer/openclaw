@@ -160,6 +160,36 @@ export const en: TranslationMap = {
     policyQ: "Can a worker schedule a job for another worker?",
     policyA:
       "No. Current policy allows worker -> self scheduling only; supervisor can schedule for self and team workers.",
+    overridesSectionTitle: "Overrides & Cost Optimization",
+    overridesSectionSub:
+      "Recommended frontdoor (CRM/own API) integration, override fallback behavior, and parameterized economy mode.",
+    frontdoorQ: "How do I integrate my CRM/API (trusted frontdoor) with the bot?",
+    frontdoorA:
+      "Recommended flow: Channel/Webhook -> your CRM/API -> chat.send. Your API resolves identity/entitlements and sends requestContext.requestSource=trusted_frontdoor_api plus claims and partial overrides.",
+    overrideFallbackQ: "How does override fallback work?",
+    overrideFallbackA:
+      "Overrides are a partial patch: an allowed field overrides; an omitted field falls back to instance/agent/session defaults. You do not need to resend the full config on every request.",
+    skillAllowlistQ: "Can I send skillAllowlist via override?",
+    skillAllowlistA:
+      "Yes, from a trusted source and subject to policy. skillAllowlist does not grant new permissions; it acts as a limiter and should be intersected with RBAC/ABAC entitlements and agent defaults.",
+    economyModeQ: "How do I configure economy mode without a local model?",
+    economyModeA:
+      "Use optimizationMode=economy as a hint, combined with contextPolicy=lean, routingHints, and budgetPolicyRef. Even without a local model, savings come from cheaper remote models, heuristics, and tool-first routing.",
+    providerCapabilityQ: "What if the provider does not support an optimization feature?",
+    providerCapabilityA:
+      "Use graceful degradation: keep the request, ignore/adjust unsupported hints, and audit/measure when needed.",
+    statusSectionTitle: "Project Status & Roadmap",
+    statusSectionSub:
+      "How to read the operational status shown in the frontend and where to track the engineering roadmap/plans.",
+    frontendStatusQ: "Does the frontend show the real project status?",
+    frontendStatusA:
+      "Partially. It shows operational/runtime status well (health, stack, drivers, jobs, swarm), but it does not show development plan/workflow progress.",
+    roadmapSourceQ: "Where do I track the roadmap and active plans?",
+    roadmapSourceA:
+      "Track them in .context/plans (especially the master plan) and .agent/workflows/*.output.md. The 'Project Status & Roadmap Guide' explains how to read both views together.",
+    completedBaselineQ: "What does 'baseline completed' mean?",
+    completedBaselineA:
+      "It means the main flow, contracts, focused tests, and operational docs are delivered. Hardening and advanced integrations may continue as follow-ups without blocking program progress.",
   },
   cronPage: {
     consoleTitle: "Jobs Console",

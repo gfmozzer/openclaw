@@ -10,6 +10,9 @@ describe("docs view", () => {
     render(renderDocsView({ basePath: "/ui" }), container);
 
     expect(container.textContent).toContain("In-App Docs");
+    expect(container.textContent).toContain("Project Status & Roadmap Guide");
+    expect(container.textContent).toContain("Trusted Frontdoor Overrides Guide");
+    expect(container.textContent).toContain("trusted_frontdoor_api");
     expect(container.textContent).toContain("chat.portal.stack.status");
     expect(container.textContent).toContain("cron.add");
     expect(container.textContent).toContain("swarm.team.upsert");

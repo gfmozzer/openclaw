@@ -60,6 +60,10 @@ import { MAX_BUFFERED_BYTES, MAX_PAYLOAD_BYTES, TICK_INTERVAL_MS } from "../../s
 import { handleGatewayRequest } from "../../server-methods.js";
 import { resolveEnterpriseIdentityFromClient } from "../../server-methods/enterprise-principal.js";
 import type { GatewayRequestContext, GatewayRequestHandlers } from "../../server-methods/types.js";
+import {
+  mapEnterpriseIdentityToPrincipalRef,
+  resolveDefaultRequestSource,
+} from "../../stateless/contracts/request-context-contract.js";
 import { formatError } from "../../server-utils.js";
 import { formatForLog, logWs } from "../../ws-log.js";
 import { truncateCloseReason } from "../close-reason.js";
@@ -1057,10 +1061,21 @@ export function attachGatewayWsMessageHandler(params: {
       };
 
       void (async () => {
+        const resolvedEnterprisePrincipal =
+          (await resolveEnterpriseIdentityFromClient({ 
+            client, 
+            connId,
+            store: buildRequestContext().enterpriseIdentityStore,
+          })) ?? undefined;
+        const requestSource = resolveDefaultRequestSource({ client, method: req.method });
         const requestContext: GatewayRequestContext = {
           ...buildRequestContext(),
-          enterprisePrincipal:
-            resolveEnterpriseIdentityFromClient({ client, connId }) ?? undefined,
+          enterprisePrincipal: resolvedEnterprisePrincipal,
+          requestSource,
+          runtimeRequestEnvelope: {
+            requestSource,
+            enterprisePrincipal: mapEnterpriseIdentityToPrincipalRef(resolvedEnterprisePrincipal),
+          },
         };
         await handleGatewayRequest({
           req,

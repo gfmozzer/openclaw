@@ -20,6 +20,7 @@ import { deviceHandlers } from "./server-methods/devices.js";
 import { driversHandlers } from "./server-methods/drivers.js";
 import { execApprovalsHandlers } from "./server-methods/exec-approvals.js";
 import { healthHandlers } from "./server-methods/health.js";
+import { identityHandlers } from "./server-methods/identity.js";
 import { logsHandlers } from "./server-methods/logs.js";
 import { modelsHandlers } from "./server-methods/models.js";
 import { providersHandlers } from "./server-methods/providers.js";
@@ -76,6 +77,7 @@ export const coreGatewayHandlers: GatewayRequestHandlers = {
   ...logsHandlers,
   ...voicewakeHandlers,
   ...healthHandlers,
+  ...identityHandlers,
   ...channelsHandlers,
   ...chatHandlers,
   ...chatPortalHandlers,

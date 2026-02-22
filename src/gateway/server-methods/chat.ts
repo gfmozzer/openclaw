@@ -50,6 +50,23 @@ import { normalizeRpcAttachmentsToChatAttachments } from "./attachment-normalize
 import type { GatewayRequestContext, GatewayRequestHandlers } from "./types.js";
 import type { IdempotencyScope } from "../stateless/contracts/idempotency-store.js";
 import type { MemoryScope } from "../stateless/contracts/memory-store.js";
+import {
+  classifyTask,
+  createDefaultExecutionRoutingPolicy,
+  type ExecutionDecision,
+  type ExecutionRoutingPolicyInput,
+  type TaskClass,
+} from "../stateless/contracts/index.js";
+import {
+  resolveOverrideResolution,
+  sanitizeOverridePatch,
+  type OverridePatch as ChatRequestOverrides,
+} from "../stateless/contracts/override-resolution.js";
+import {
+  normalizeRequestSource,
+  sanitizeTrustedFrontdoorClaims,
+  type RequestSource,
+} from "../stateless/contracts/request-context-contract.js";
 
 type TranscriptAppendResult = {
   ok: boolean;
@@ -68,16 +85,6 @@ type AbortedPartialSnapshot = {
   abortOrigin: AbortOrigin;
 };
 
-type ChatRequestOverrides = {
-  provider?: string;
-  model?: string;
-  systemPrompt?: string;
-  soul?: string;
-  apiKey?: string;
-  authProfileId?: string;
-  skillAllowlist?: string[];
-};
-
 type ChatObservedModelRoute = {
   driver: string;
   provider: string;
@@ -85,46 +92,208 @@ type ChatObservedModelRoute = {
   modelRoute: string;
 };
 
-function sanitizeChatRequestOverrides(raw: unknown): ChatRequestOverrides | undefined {
+type ChatSendRequestContextOverride = {
+  requestSource?: RequestSource;
+  trustedFrontdoor?: {
+    frontdoorId?: string;
+    claimsRef?: string;
+    claims?: Record<string, unknown>;
+  };
+};
+
+function sanitizeChatSendRequestContext(raw: unknown): ChatSendRequestContextOverride | undefined {
   if (!raw || typeof raw !== "object") {
     return undefined;
   }
   const input = raw as Record<string, unknown>;
-  const trimString = (value: unknown, max: number): string | undefined => {
-    if (typeof value !== "string") {
-      return undefined;
-    }
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-    return trimmed.slice(0, max);
+  const requestSource = normalizeRequestSource(input.requestSource);
+  const trustedRaw =
+    input.trustedFrontdoor && typeof input.trustedFrontdoor === "object"
+      ? (input.trustedFrontdoor as Record<string, unknown>)
+      : undefined;
+  const trim = (value: unknown, max: number): string | undefined => {
+    if (typeof value !== "string") return undefined;
+    const v = value.trim();
+    return v ? v.slice(0, max) : undefined;
   };
-  const overrides: ChatRequestOverrides = {
-    provider: trimString(input.provider, 200),
-    model: trimString(input.model, 200),
-    systemPrompt: trimString(input.systemPrompt, 12_000),
-    soul: trimString(input.soul, 12_000),
-    apiKey: trimString(input.apiKey, 8_192),
-    authProfileId: trimString(input.authProfileId, 200),
-    skillAllowlist: Array.isArray(input.skillAllowlist)
-      ? input.skillAllowlist
-          .map((entry) => (typeof entry === "string" ? entry.trim().slice(0, 200) : ""))
-          .filter((entry) => Boolean(entry))
-      : undefined,
-  };
-  if (
-    !overrides.provider &&
-    !overrides.model &&
-    !overrides.systemPrompt &&
-    !overrides.soul &&
-    !overrides.apiKey &&
-    !overrides.authProfileId &&
-    !overrides.skillAllowlist
-  ) {
+  const trustedFrontdoor = trustedRaw
+    ? {
+        frontdoorId: trim(trustedRaw.frontdoorId, 200),
+        claimsRef: trim(trustedRaw.claimsRef, 200),
+        claims:
+          trustedRaw.claims && typeof trustedRaw.claims === "object"
+            ? (trustedRaw.claims as Record<string, unknown>)
+            : undefined,
+      }
+    : undefined;
+  if (!requestSource && !trustedFrontdoor) {
     return undefined;
   }
-  return overrides;
+  return {
+    requestSource,
+    trustedFrontdoor:
+      trustedFrontdoor &&
+      (trustedFrontdoor.frontdoorId || trustedFrontdoor.claimsRef || trustedFrontdoor.claims)
+        ? trustedFrontdoor
+        : undefined,
+  };
+}
+
+type OverridePolicyDecision = {
+  effectiveRequestSource: RequestSource;
+  filteredOverrides?: ChatRequestOverrides;
+  deniedFields: string[];
+  deniedReason?: string;
+  rejectRequest?: boolean;
+  rejectMessage?: string;
+};
+
+function applyOverrideSourcePolicy(params: {
+  requestSource: RequestSource;
+  overrides?: ChatRequestOverrides;
+  trustedAllowedFields?: string[];
+}): OverridePolicyDecision {
+  const { requestSource, overrides } = params;
+  if (!overrides) {
+    return { effectiveRequestSource: requestSource, filteredOverrides: undefined, deniedFields: [] };
+  }
+  const denied = new Set<string>();
+  const filtered: ChatRequestOverrides = { ...overrides };
+  let rejectRequest = false;
+  let rejectMessage: string | undefined;
+  const drop = (field: keyof ChatRequestOverrides, reason?: string) => {
+    if (filtered[field] !== undefined) {
+      delete filtered[field];
+      denied.add(String(field));
+    }
+    return reason;
+  };
+
+  if (requestSource === "channel_direct") {
+    if (filtered.apiKey !== undefined || filtered.authProfileId !== undefined) {
+      if (filtered.apiKey !== undefined) denied.add("apiKey");
+      if (filtered.authProfileId !== undefined) denied.add("authProfileId");
+      rejectRequest = true;
+      rejectMessage = "sensitive BYOK override fields are not allowed for channel_direct";
+      delete filtered.apiKey;
+      delete filtered.authProfileId;
+    }
+    drop("skillAllowlist");
+    drop("optimizationMode");
+    drop("contextPolicy");
+    drop("routingHints");
+    drop("budgetPolicyRef");
+  }
+
+  if (requestSource === "trusted_frontdoor_api" && Array.isArray(params.trustedAllowedFields)) {
+    const allowed = new Set(params.trustedAllowedFields);
+    for (const key of Object.keys(filtered) as Array<keyof ChatRequestOverrides>) {
+      if (!allowed.has(String(key))) {
+        delete filtered[key];
+        denied.add(String(key));
+      }
+    }
+  }
+
+  if (Object.values(filtered).every((value) => value === undefined)) {
+    return {
+      effectiveRequestSource: requestSource,
+      filteredOverrides: undefined,
+      deniedFields: [...denied],
+      deniedReason: denied.size > 0 ? "override_fields_not_allowed_for_source" : undefined,
+      rejectRequest,
+      rejectMessage,
+    };
+  }
+
+  return {
+    effectiveRequestSource: requestSource,
+    filteredOverrides: filtered,
+    deniedFields: [...denied],
+    deniedReason: denied.size > 0 ? "override_fields_not_allowed_for_source" : undefined,
+    rejectRequest,
+    rejectMessage,
+  };
+}
+
+type TrustedFrontdoorClaimsValidationResult =
+  | { ok: true }
+  | { ok: false; code: "MISSING_CLAIMS" | "CLAIMS_EXPIRED" | "CLAIMS_NOT_YET_VALID"; message: string };
+
+function validateTrustedFrontdoorClaimsWindow(
+  claims: ReturnType<typeof sanitizeTrustedFrontdoorClaims>,
+  now = Date.now(),
+): TrustedFrontdoorClaimsValidationResult {
+  if (!claims) {
+    return { ok: false, code: "MISSING_CLAIMS", message: "trusted frontdoor claims are required" };
+  }
+  if (typeof claims.expiresAt === "number" && claims.expiresAt < now) {
+    return { ok: false, code: "CLAIMS_EXPIRED", message: "trusted frontdoor claims expired" };
+  }
+  if (typeof claims.issuedAt === "number" && claims.issuedAt > now + 30_000) {
+    return { ok: false, code: "CLAIMS_NOT_YET_VALID", message: "trusted frontdoor claims issuedAt is in the future" };
+  }
+  return { ok: true };
+}
+
+/**
+ * Resolve o modo de execução para uma tarefa de chat baseado nas características
+ * Integração com Plan 2: Execution Routing Policy
+ */
+function resolveChatExecutionDecision(params: {
+  taskType: string;
+  requestSource: RequestSource;
+  timeoutMs: number;
+  tenantId: string;
+  messageLength: number;
+  hasAttachments: boolean;
+  estimatedComplexity?: "low" | "medium" | "high";
+  availableModes?: ("inline" | "redis_ephemeral" | "temporal_workflow")[];
+}): { taskClass: TaskClass; executionDecision: ExecutionDecision } {
+  // Estima duração baseado em complexidade e tamanho
+  const estimatedDurationMs = (() => {
+    const baseMs = params.estimatedComplexity === "high" ? 60000 : params.estimatedComplexity === "medium" ? 30000 : 10000;
+    const attachmentOverhead = params.hasAttachments ? 5000 : 0;
+    const lengthOverhead = Math.min(params.messageLength * 10, 10000);
+    return baseMs + attachmentOverhead + lengthOverhead;
+  })();
+
+  // Classifica a tarefa
+  const classification = classifyTask({
+    taskType: params.taskType,
+    estimatedDurationMs,
+    requiresResume: false,
+    requiresCallback: false,
+    isIdempotent: true,
+    canRetry: true,
+    hasHumanInTheLoop: false,
+    scheduleKind: "immediate",
+  });
+
+  // Cria policy com modos disponíveis
+  const availableModes = params.availableModes ?? ["inline", "redis_ephemeral", "temporal_workflow"];
+  const policy = createDefaultExecutionRoutingPolicy(availableModes);
+
+  // Prepara input para policy
+  const policyInput: ExecutionRoutingPolicyInput = {
+    taskType: params.taskType,
+    taskClass: classification.taskClass,
+    requestSource: params.requestSource,
+    timeoutBudgetMs: params.timeoutMs,
+    isIdempotent: true,
+    canRetry: true,
+    requiresResume: false,
+    tenantId: params.tenantId,
+    priority: 5,
+  };
+
+  // Toma decisão
+  const executionDecision = policy.decide(policyInput);
+
+  return {
+    taskClass: classification.taskClass,
+    executionDecision,
+  };
 }
 
 function resolveObservedModelRoute(params: {
@@ -846,6 +1015,14 @@ export const chatHandlers: GatewayRequestHandlers = {
       );
       return;
     }
+    if (context.tenantContext && !context.enterprisePrincipal) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.FORBIDDEN, "unauthorized enterprise principal for chat.history"),
+      );
+      return;
+    }
     const { sessionKey, limit } = params as {
       sessionKey: string;
       limit?: number;
@@ -920,6 +1097,14 @@ export const chatHandlers: GatewayRequestHandlers = {
           ErrorCodes.INVALID_REQUEST,
           `invalid chat.abort params: ${formatValidationErrors(validateChatAbortParams.errors)}`,
         ),
+      );
+      return;
+    }
+    if (context.tenantContext && !context.enterprisePrincipal) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.FORBIDDEN, "unauthorized enterprise principal for chat.abort"),
       );
       return;
     }
@@ -1014,6 +1199,14 @@ export const chatHandlers: GatewayRequestHandlers = {
       );
       return;
     }
+    if (context.tenantContext && !context.enterprisePrincipal) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.FORBIDDEN, "unauthorized enterprise principal for chat.send"),
+      );
+      return;
+    }
     const p = params as {
       sessionKey: string;
       message: string;
@@ -1027,6 +1220,7 @@ export const chatHandlers: GatewayRequestHandlers = {
       }>;
       timeoutMs?: number;
       overrides?: ChatRequestOverrides;
+      requestContext?: ChatSendRequestContextOverride;
       idempotencyKey: string;
     };
     const sanitizedMessageResult = sanitizeChatSendMessageInput(p.message);
@@ -1094,7 +1288,152 @@ export const chatHandlers: GatewayRequestHandlers = {
       cfg,
       overrideMs: p.timeoutMs,
     });
-    const requestOverrides = sanitizeChatRequestOverrides(p.overrides);
+    const requestContextOverride = sanitizeChatSendRequestContext(p.requestContext);
+    const effectiveRequestSource = requestContextOverride?.requestSource ?? context.requestSource ?? "operator_ui";
+    if (effectiveRequestSource === "trusted_frontdoor_api") {
+      incrementEnterpriseMetric("trusted_frontdoor_requests_total");
+    }
+    if (requestContextOverride?.trustedFrontdoor) {
+      const sanitizedClaims = sanitizeTrustedFrontdoorClaims(requestContextOverride.trustedFrontdoor.claims);
+      context.trustedFrontdoorDispatch = {
+        frontdoorId: requestContextOverride.trustedFrontdoor.frontdoorId ?? "frontdoor",
+        requestSource: "trusted_frontdoor_api",
+        claimsRef: requestContextOverride.trustedFrontdoor.claimsRef,
+        claims: sanitizedClaims,
+        trustedClaims: requestContextOverride.trustedFrontdoor.claims,
+      };
+    }
+    if (effectiveRequestSource === "trusted_frontdoor_api") {
+      const claimsValidation = validateTrustedFrontdoorClaimsWindow(
+        context.trustedFrontdoorDispatch?.claims,
+      );
+      if (!claimsValidation.ok) {
+        incrementEnterpriseMetric("override_request_rejected_total");
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.FORBIDDEN, claimsValidation.message, {
+            details: {
+              requestSource: effectiveRequestSource,
+              code: claimsValidation.code,
+            },
+          }),
+        );
+        return;
+      }
+    }
+
+    const rawRequestOverrides = sanitizeOverridePatch(p.overrides);
+    const trustedAllowedFields =
+      effectiveRequestSource === "trusted_frontdoor_api"
+        ? context.trustedFrontdoorDispatch?.claims?.allowedOverrideFields
+        : undefined;
+    const policyDecision = applyOverrideSourcePolicy({
+      requestSource: effectiveRequestSource,
+      overrides: rawRequestOverrides,
+      trustedAllowedFields,
+    });
+    const requestOverrides = policyDecision.filteredOverrides;
+    if (policyDecision.deniedFields.length > 0) {
+      incrementEnterpriseMetric("override_field_rejected_total", policyDecision.deniedFields.length);
+      if (context.auditEventStore) {
+        context.auditEventStore
+          .append({
+            tenantId: context.tenantContext?.tenantId ?? context.enterprisePrincipal?.tenantId ?? "unknown",
+            requesterId: client?.connect?.device?.id,
+            action: "override.fields.rejected",
+            resource: "chat.send",
+            metadata: {
+              requestSource: effectiveRequestSource,
+              deniedFields: policyDecision.deniedFields,
+              reason: policyDecision.deniedReason,
+            },
+          })
+          .catch(() => {});
+      }
+      if (
+        policyDecision.rejectRequest ||
+        rawRequestOverrides &&
+        Object.keys(rawRequestOverrides).length > 0 &&
+        (!requestOverrides || Object.keys(requestOverrides).length === 0)
+      ) {
+        incrementEnterpriseMetric("override_request_rejected_total");
+        respond(
+          false,
+          undefined,
+          errorShape(
+            ErrorCodes.FORBIDDEN,
+            policyDecision.rejectMessage ??
+              `override fields are not allowed for requestSource=${effectiveRequestSource}`,
+            {
+              details: {
+                deniedFields: policyDecision.deniedFields,
+                requestSource: effectiveRequestSource,
+              },
+            },
+          ),
+        );
+        return;
+      }
+    }
+    const overrideResolution = resolveOverrideResolution({
+      requestPatch: requestOverrides,
+      requestSource: effectiveRequestSource,
+    });
+    context.overrideResolution = overrideResolution;
+    context.requestSource = effectiveRequestSource;
+
+    // Plan 2: Execution Routing Decision
+    const tenantId = context.tenantContext?.tenantId ?? context.enterprisePrincipal?.tenantId ?? "default";
+    const { taskClass, executionDecision } = resolveChatExecutionDecision({
+      taskType: "chat.send",
+      requestSource: effectiveRequestSource,
+      timeoutMs,
+      tenantId,
+      messageLength: parsedMessage.length,
+      hasAttachments: parsedImages.length > 0 || normalizedAttachments.length > 0,
+      estimatedComplexity: parsedImages.length > 0 ? "medium" : "low",
+      availableModes: ["inline"], // Por enquanto, apenas inline para chat.send
+    });
+    context.executionDecision = executionDecision;
+
+    // Audit execution decision
+    if (context.auditEventStore) {
+      context.auditEventStore
+        .append({
+          tenantId,
+          requesterId: client?.connect?.device?.id,
+          action: "execution.decision",
+          resource: "chat.send",
+          metadata: {
+            taskClass,
+            executionMode: executionDecision.mode,
+            reason: executionDecision.reason,
+            requestSource: effectiveRequestSource,
+          },
+        })
+        .catch(() => {});
+    }
+
+    if (requestOverrides?.skillAllowlist && overrideResolution.capability.rejectedSkills.length > 0) {
+      incrementEnterpriseMetric("skill_allowlist_reduced_total");
+      if (context.auditEventStore) {
+        context.auditEventStore
+          .append({
+            tenantId: context.tenantContext?.tenantId ?? context.enterprisePrincipal?.tenantId ?? "unknown",
+            requesterId: client?.connect?.device?.id,
+            action: "override.skill_allowlist.reduced",
+            resource: "chat.send",
+            metadata: {
+              requestSource: effectiveRequestSource,
+              requestedCount: requestOverrides.skillAllowlist.length,
+              effectiveCount: overrideResolution.effectiveSkillAllowlist?.length ?? 0,
+              rejectedSkills: overrideResolution.capability.rejectedSkills,
+            },
+          })
+          .catch(() => {});
+      }
+    }
     const observedModelRoute = resolveObservedModelRoute({
       cfg,
       entry,

@@ -7,6 +7,7 @@ import type { SessionStateStore } from "./contracts/session-state-store.js";
 import type { SkillLoader } from "./contracts/skill-loader.js";
 import type { SwarmDirectoryStore } from "./contracts/swarm-directory-store.js";
 import type { ToolBusDispatcher } from "./contracts/tool-bus-dispatcher.js";
+import type { EnterpriseIdentityStore } from "./contracts/enterprise-identity-store.js";
 import {
   InMemoryIdempotencyStore,
   InMemoryMemoryStore,
@@ -14,6 +15,7 @@ import {
   InMemorySchedulerOrchestrator,
   InMemorySessionStateStore,
   InMemorySwarmDirectoryStore,
+  InMemoryEnterpriseIdentityStore,
 } from "./adapters/in-memory/index.js";
 import {
   createHttpToolBusDispatcherFromEnv,
@@ -39,6 +41,7 @@ export type StatelessRuntimeDeps = {
   skillLoader: SkillLoader;
   toolBusDispatcher?: ToolBusDispatcher;
   auditEventStore?: AuditEventStore;
+  enterpriseIdentityStore: EnterpriseIdentityStore;
   /**
    * True when OPENCLAW_REDIS_URL is configured and the BullMQ/ioredis layer is available.
    * Plans 2 (followup drain) and 4 (debounce) must check this before using createQueue().
@@ -192,6 +195,49 @@ export function createStatelessRuntimeDeps(
       },
     };
 
+    const lazyEnterpriseIdentity: EnterpriseIdentityStore = {
+      async upsertPrincipal(t, p, r, a) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().upsertPrincipal(t, p, r, a);
+      },
+      async getPrincipal(t, p) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().getPrincipal(t, p);
+      },
+      async listPrincipals(t, l, c) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().listPrincipals(t, l, c);
+      },
+      async bindChannel(t, p, c, a, s) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().bindChannel(t, p, c, a, s);
+      },
+      async unbindChannel(t, c, a, s) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().unbindChannel(t, c, a, s);
+      },
+      async getPrincipalByChannel(t, c, a, s) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().getPrincipalByChannel(t, c, a, s);
+      },
+      async listChannelBindings(t, p) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().listChannelBindings(t, p);
+      },
+      async upsertGrant(t, p, r, a, at) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().upsertGrant(t, p, r, a, at);
+      },
+      async revokeGrant(t, p, r, a) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().revokeGrant(t, p, r, a);
+      },
+      async listGrants(t, p) {
+        await init;
+        return new prismaAdapters!.PrismaEnterpriseIdentityStore().listGrants(t, p);
+      },
+    };
+
     return {
       sessionStateStore: lazySession,
       memoryStore: lazyMemory,
@@ -202,6 +248,7 @@ export function createStatelessRuntimeDeps(
       skillLoader: shared.skillLoader,
       toolBusDispatcher: shared.toolBusDispatcher,
       auditEventStore: lazyAudit,
+      enterpriseIdentityStore: lazyEnterpriseIdentity,
       redisAvailable: shared.redisAvailable,
     };
   }
@@ -218,6 +265,7 @@ export function createStatelessRuntimeDeps(
       memoryStore: new S3MemoryStore(s3Config),
       ...shared,
       swarmDirectoryStore: new InMemorySwarmDirectoryStore(),
+      enterpriseIdentityStore: new InMemoryEnterpriseIdentityStore(),
     }; // redisAvailable is spread from shared
   }
 
@@ -226,5 +274,6 @@ export function createStatelessRuntimeDeps(
     memoryStore: new InMemoryMemoryStore(),
     ...shared,
     swarmDirectoryStore: new InMemorySwarmDirectoryStore(),
+    enterpriseIdentityStore: new InMemoryEnterpriseIdentityStore(),
   }; // redisAvailable is spread from shared
 }

@@ -17,7 +17,16 @@ import type { SkillLoader } from "../stateless/contracts/skill-loader.js";
 import type { SwarmDirectoryStore } from "../stateless/contracts/swarm-directory-store.js";
 import type { ToolBusDispatcher } from "../stateless/contracts/tool-bus-dispatcher.js";
 import type { AuditEventStore } from "../stateless/contracts/audit-event-store.js";
+import type { EnterpriseIdentityStore } from "../stateless/contracts/enterprise-identity-store.js";
 import type { EnterpriseIdentity } from "../stateless/contracts/enterprise-orchestration.js";
+import type {
+  ChannelIdentity,
+  RuntimeRequestContextEnvelope,
+  TrustedFrontdoorDispatchContext,
+  RequestSource,
+} from "../stateless/contracts/request-context-contract.js";
+import type { ExecutionDecision } from "../stateless/contracts/execution-routing.js";
+import type { OverrideResolution } from "../stateless/contracts/override-resolution.js";
 import type { TenantContext } from "../stateless/multitenancy/tenant-context.js";
 import type { GatewayBroadcastFn, GatewayBroadcastToConnIdsFn } from "../server-broadcast.js";
 import type { ChannelRuntimeSnapshot } from "../server-channels.js";
@@ -51,8 +60,15 @@ export type GatewayRequestContext = {
   skillLoader?: SkillLoader;
   toolBusDispatcher?: ToolBusDispatcher;
   auditEventStore?: AuditEventStore;
+  enterpriseIdentityStore?: EnterpriseIdentityStore;
   tenantContext?: TenantContext;
   enterprisePrincipal?: EnterpriseIdentity;
+  requestSource?: RequestSource;
+  channelIdentity?: ChannelIdentity;
+  trustedFrontdoorDispatch?: TrustedFrontdoorDispatchContext;
+  runtimeRequestEnvelope?: RuntimeRequestContextEnvelope;
+  overrideResolution?: OverrideResolution;
+  executionDecision?: ExecutionDecision;
   execApprovalManager?: ExecApprovalManager;
   loadGatewayModelCatalog: () => Promise<ModelCatalogEntry[]>;
   getHealthCache: () => HealthSummary | null;

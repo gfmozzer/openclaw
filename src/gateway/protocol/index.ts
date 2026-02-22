@@ -259,6 +259,22 @@ import {
   WizardStatusResultSchema,
   type WizardStep,
   WizardStepSchema,
+  type IdentityPrincipalUpsertParams,
+  IdentityPrincipalUpsertParamsSchema,
+  type IdentityPrincipalGetParams,
+  IdentityPrincipalGetParamsSchema,
+  type IdentityPrincipalListParams,
+  IdentityPrincipalListParamsSchema,
+  type IdentityChannelBindParams,
+  IdentityChannelBindParamsSchema,
+  type IdentityChannelUnbindParams,
+  IdentityChannelUnbindParamsSchema,
+  type IdentityChannelListParams,
+  IdentityChannelListParamsSchema,
+  type IdentityGrantUpsertParams,
+  IdentityGrantUpsertParamsSchema,
+  type IdentityGrantRevokeParams,
+  IdentityGrantRevokeParamsSchema,
 } from "./schema.js";
 
 const ajv = new (AjvPkg as unknown as new (opts?: object) => import("ajv").default)({
@@ -439,6 +455,14 @@ export const validateUpdateRunParams = ajv.compile<UpdateRunParams>(UpdateRunPar
 export const validateWebLoginStartParams =
   ajv.compile<WebLoginStartParams>(WebLoginStartParamsSchema);
 export const validateWebLoginWaitParams = ajv.compile<WebLoginWaitParams>(WebLoginWaitParamsSchema);
+export const validateIdentityPrincipalUpsertParams = ajv.compile<IdentityPrincipalUpsertParams>(IdentityPrincipalUpsertParamsSchema);
+export const validateIdentityPrincipalGetParams = ajv.compile<IdentityPrincipalGetParams>(IdentityPrincipalGetParamsSchema);
+export const validateIdentityPrincipalListParams = ajv.compile<IdentityPrincipalListParams>(IdentityPrincipalListParamsSchema);
+export const validateIdentityChannelBindParams = ajv.compile<IdentityChannelBindParams>(IdentityChannelBindParamsSchema);
+export const validateIdentityChannelUnbindParams = ajv.compile<IdentityChannelUnbindParams>(IdentityChannelUnbindParamsSchema);
+export const validateIdentityChannelListParams = ajv.compile<IdentityChannelListParams>(IdentityChannelListParamsSchema);
+export const validateIdentityGrantUpsertParams = ajv.compile<IdentityGrantUpsertParams>(IdentityGrantUpsertParamsSchema);
+export const validateIdentityGrantRevokeParams = ajv.compile<IdentityGrantRevokeParams>(IdentityGrantRevokeParamsSchema);
 
 export function formatValidationErrors(errors: ErrorObject[] | null | undefined) {
   if (!errors?.length) {
@@ -584,6 +608,14 @@ export {
   UpdateRunParamsSchema,
   TickEventSchema,
   ShutdownEventSchema,
+  IdentityPrincipalUpsertParamsSchema,
+  IdentityPrincipalGetParamsSchema,
+  IdentityPrincipalListParamsSchema,
+  IdentityChannelBindParamsSchema,
+  IdentityChannelUnbindParamsSchema,
+  IdentityChannelListParamsSchema,
+  IdentityGrantUpsertParamsSchema,
+  IdentityGrantRevokeParamsSchema,
   ProtocolSchemas,
   PROTOCOL_VERSION,
   ErrorCodes,
@@ -709,4 +741,12 @@ export type {
   PollParams,
   UpdateRunParams,
   ChatInjectParams,
+  IdentityPrincipalUpsertParams,
+  IdentityPrincipalGetParams,
+  IdentityPrincipalListParams,
+  IdentityChannelBindParams,
+  IdentityChannelUnbindParams,
+  IdentityChannelListParams,
+  IdentityGrantUpsertParams,
+  IdentityGrantRevokeParams,
 };

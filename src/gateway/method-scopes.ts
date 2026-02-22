@@ -84,6 +84,9 @@ const METHOD_SCOPE_GROUPS: Record<OperatorScope, readonly string[]> = {
     "talk.config",
     "agents.files.list",
     "agents.files.get",
+    "identity.principal.get",
+    "identity.principal.list",
+    "identity.channel.list",
   ],
   [WRITE_SCOPE]: [
     "send",
@@ -136,6 +139,11 @@ const METHOD_SCOPE_GROUPS: Record<OperatorScope, readonly string[]> = {
     "set-heartbeats",
     "system-event",
     "agents.files.set",
+    "identity.principal.upsert",
+    "identity.channel.bind",
+    "identity.channel.unbind",
+    "identity.grant.upsert",
+    "identity.grant.revoke",
   ],
 };
 

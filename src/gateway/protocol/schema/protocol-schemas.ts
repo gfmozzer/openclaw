@@ -179,6 +179,16 @@ import {
   WizardStatusResultSchema,
   WizardStepSchema,
 } from "./wizard.js";
+import {
+  IdentityPrincipalUpsertParamsSchema,
+  IdentityPrincipalGetParamsSchema,
+  IdentityPrincipalListParamsSchema,
+  IdentityChannelBindParamsSchema,
+  IdentityChannelUnbindParamsSchema,
+  IdentityChannelListParamsSchema,
+  IdentityGrantUpsertParamsSchema,
+  IdentityGrantRevokeParamsSchema,
+} from "./identity.js";
 
 export const ProtocolSchemas: Record<string, TSchema> = {
   ConnectParams: ConnectParamsSchema,
@@ -338,6 +348,14 @@ export const ProtocolSchemas: Record<string, TSchema> = {
   DriversProvidersListResult: DriversProvidersListResultSchema,
   DriversSmokeTestParams: DriversSmokeTestParamsSchema,
   DriversSmokeTestResult: DriversSmokeTestResultSchema,
+  IdentityPrincipalUpsertParams: IdentityPrincipalUpsertParamsSchema,
+  IdentityPrincipalGetParams: IdentityPrincipalGetParamsSchema,
+  IdentityPrincipalListParams: IdentityPrincipalListParamsSchema,
+  IdentityChannelBindParams: IdentityChannelBindParamsSchema,
+  IdentityChannelUnbindParams: IdentityChannelUnbindParamsSchema,
+  IdentityChannelListParams: IdentityChannelListParamsSchema,
+  IdentityGrantUpsertParams: IdentityGrantUpsertParamsSchema,
+  IdentityGrantRevokeParams: IdentityGrantRevokeParamsSchema,
 };
 
 export const PROTOCOL_VERSION = 3 as const;

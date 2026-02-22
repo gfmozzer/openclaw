@@ -43,10 +43,11 @@ function resolveEnterpriseRole(params: {
   return "admin";
 }
 
-export function resolveEnterpriseIdentityFromClient(params: {
+export async function resolveEnterpriseIdentityFromClient(params: {
   client: GatewayClient | null;
   connId?: string;
-}): EnterpriseIdentity | null {
+  store?: import("../stateless/contracts/enterprise-identity-store.js").EnterpriseIdentityStore;
+}): Promise<EnterpriseIdentity | null> {
   const connect = params.client?.connect;
   if (!connect) {
     return null;
@@ -60,6 +61,32 @@ export function resolveEnterpriseIdentityFromClient(params: {
     "unknown-requester";
   const scopes = readEnterpriseScopes(connect.scopes);
   const role = resolveEnterpriseRole({ role: connect.role, scopes });
+
+  if (params.store) {
+    try {
+      const stored = await params.store.getPrincipal(tenantId, requesterId);
+      if (stored) {
+        return {
+          tenantId: stored.tenantId,
+          requesterId: stored.principalId,
+          role: stored.role as EnterpriseRole,
+          scopes: (stored.attributes?.scopes as EnterpriseScope[]) ?? scopes,
+        };
+      }
+      // Auto-upsert if not exists, based on token claims
+      const upserted = await params.store.upsertPrincipal(tenantId, requesterId, role, { scopes });
+      return {
+        tenantId: upserted.tenantId,
+        requesterId: upserted.principalId,
+        role: upserted.role as EnterpriseRole,
+        scopes: (upserted.attributes?.scopes as EnterpriseScope[]) ?? scopes,
+      };
+    } catch (err) {
+      // Fallback to connection claims on store error
+      console.warn(`[EnterpriseIdentity] store lookup failed for ${tenantId}/${requesterId}:`, err);
+    }
+  }
+
   return {
     tenantId,
     requesterId,

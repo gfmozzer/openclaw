@@ -1,0 +1,12 @@
+src/gateway/stateless/adapters/prisma/prisma-enterprise-identity-store.ts(21,11): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/gateway/stateless/adapters/prisma/prisma-enterprise-identity-store.ts(27,11): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/gateway/stateless/adapters/prisma/prisma-enterprise-identity-store.ts(222,11): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/gateway/stateless/adapters/prisma/prisma-enterprise-identity-store.ts(229,11): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.

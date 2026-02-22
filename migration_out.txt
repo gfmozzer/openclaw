@@ -1,0 +1,7 @@
+npm warn Unknown project config "allow-build-scripts". This will stop working in the next major version of npm.
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "openclaw", schema "public" at "localhost:5432"
+
+Error: P1010: User was denied access on the database `(not available)`

@@ -10,6 +10,10 @@ type EnterpriseMetricName =
   | "chat_async_resume_total"
   | "chat_async_resume_failures_total"
   | "byok_override_accepted_total"
+  | "override_request_rejected_total"
+  | "override_field_rejected_total"
+  | "trusted_frontdoor_requests_total"
+  | "skill_allowlist_reduced_total"
   | "provider_credential_upsert_total"
   | "provider_credential_test_total"
   | "provider_models_discovery_fail_total";
@@ -31,6 +35,10 @@ const counters: Record<EnterpriseMetricName, number> = {
   chat_async_resume_total: 0,
   chat_async_resume_failures_total: 0,
   byok_override_accepted_total: 0,
+  override_request_rejected_total: 0,
+  override_field_rejected_total: 0,
+  trusted_frontdoor_requests_total: 0,
+  skill_allowlist_reduced_total: 0,
   provider_credential_upsert_total: 0,
   provider_credential_test_total: 0,
   provider_models_discovery_fail_total: 0,
@@ -66,6 +74,10 @@ export function resetEnterpriseMetricsForTest(): void {
   counters.chat_async_resume_total = 0;
   counters.chat_async_resume_failures_total = 0;
   counters.byok_override_accepted_total = 0;
+  counters.override_request_rejected_total = 0;
+  counters.override_field_rejected_total = 0;
+  counters.trusted_frontdoor_requests_total = 0;
+  counters.skill_allowlist_reduced_total = 0;
   counters.provider_credential_upsert_total = 0;
   counters.provider_credential_test_total = 0;
   counters.provider_models_discovery_fail_total = 0;

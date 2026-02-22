@@ -1,0 +1,15 @@
+{
+  "decisions": [
+    {
+      "title": "Split runtime governance into 4 executable plans after contract freeze",
+      "description": "Os gaps foram divididos em Plan 0 (contracts/request context), Plan 1 (identity/rbac/abac/channel mapping), Plan 2 (supervisor-worker delegation + execution routing), Plan 3 (override source policy + trusted frontdoor). Plan 0 e pre-requisito; Plans 1/2/3 podem rodar em paralelo parcial consumindo os contratos congelados.",
+      "alternatives": [
+        "Plano unico grande (mais risco de conflito em chat.ts e server-methods/types.ts)",
+        "Executar sem contract freeze (mais rapido no inicio, alto risco de redefinicoes e regressao)"
+      ],
+      "status": "accepted",
+      "id": "dec-1771783428920",
+      "decidedAt": "2026-02-22T18:03:48.920Z"
+    }
+  ]
+}

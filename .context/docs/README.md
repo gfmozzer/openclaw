@@ -17,6 +17,8 @@ Welcome to the repository knowledge base. This is a fork of OpenClaw transformed
 - [Config Console Guide](./config-console-guide.md) — guia completo da pagina `/config` (sidebar, subtabs e botoes)
 - [Driver Onboarding Runbook](./driver-onboarding-runbook.md) — como adicionar drivers/SDKs por container com env gating, credenciais e validacao
 - [Driver/Provider UI Rollout Guide](./driver-provider-ui-rollout-guide.md) — operacao da UI `/drivers`, `/providers`, `Agents` e `Swarm` para driver/provider/model
+- [Trusted Frontdoor Overrides Guide](./trusted-frontdoor-overrides-guide.md) — integracao da sua API/CRM com `chat.send`, claims, overrides, fallback e `optimizationMode`
+- [Project Status & Roadmap Guide](./project-status-roadmap-guide.md) — como acompanhar status operacional (frontend) vs status de planos/workflows (markdown)
 
 ## Enterprise Workflows
 All transformation workflows are in `.agent/workflows/` (01–16).
@@ -94,3 +96,5 @@ See [Project Overview](./project-overview.md) for status of each.
 | Config Console Guide | `config-console-guide.md` | Operacao detalhada da aba `/config`, modos, secoes e acoes |
 | Driver Onboarding Runbook | `driver-onboarding-runbook.md` | Arquitetura driver/provider, env gating por container, rollout e onboarding de SDKs |
 | Driver/Provider UI Rollout Guide | `driver-provider-ui-rollout-guide.md` | Operacao guiada no frontend para drivers/providers/modelos, smoke tests e swarm |
+| Trusted Frontdoor Overrides Guide | `trusted-frontdoor-overrides-guide.md` | Integracao API/CRM -> OpenClaw com requestContext, claims, override policy e fallback |
+| Project Status & Roadmap Guide | `project-status-roadmap-guide.md` | Como ler status de runtime no frontend e status de engenharia nos planos/workflows |
