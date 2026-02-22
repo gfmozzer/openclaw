@@ -29,6 +29,21 @@ export type ModelDefinitionConfig = {
   api?: ModelApi;
   reasoning: boolean;
   input: Array<"text" | "image">;
+  /**
+   * Expose this model route as a reusable tool/API contract.
+   * This is model-level metadata (not an agent/container role).
+   */
+  toolMode?: boolean;
+  /**
+   * Optional contract metadata for model tools.
+   */
+  toolContract?: {
+    kind?: "generic" | "chat" | "image" | "audio" | "video";
+    description?: string;
+    timeoutMs?: number;
+    inputSchema?: Record<string, unknown>;
+    outputSchema?: Record<string, unknown>;
+  };
   cost: {
     input: number;
     output: number;

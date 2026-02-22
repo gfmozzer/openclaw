@@ -59,6 +59,17 @@ import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exe
 import type { SkillMessage } from "./controllers/skills.ts";
 import { createDefaultSwarmForm } from "./controllers/swarm.ts";
 import type { SwarmTeamDefinition } from "./controllers/swarm.ts";
+import type {
+  ProviderCredentialType,
+  ProviderModelsGroup,
+  ProviderRegistryEntry,
+} from "./controllers/providers.ts";
+import type {
+  DriverModelsGroup,
+  DriverProvidersGroup,
+  DriverRegistryEntry,
+  DriverSmokeResult,
+} from "./controllers/drivers.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab, UiMode } from "./navigation.ts";
 import { loadSettings, type UiSettings } from "./storage.ts";
@@ -227,6 +238,33 @@ export class OpenClawApp extends LitElement {
   @state() agentsSelectedId: string | null = null;
   @state() agentsPanel: "overview" | "files" | "memory" | "metrics" | "tools" | "skills" | "channels" | "cron" | "swarm" =
     "overview";
+  @state() providersLoading = false;
+  @state() providersSaving = false;
+  @state() providersTesting = false;
+  @state() providersError: string | null = null;
+  @state() providersNotice: string | null = null;
+  @state() providersRegistry: ProviderRegistryEntry[] = [];
+  @state() providersModels: ProviderModelsGroup[] = [];
+  @state() providersSelectedId: string | null = null;
+  @state() providerCredentialDrafts: Record<string, string> = {};
+  @state() providerCredentialTypes: Record<string, ProviderCredentialType> = {};
+  @state() providerCredentialProfiles: Record<string, string> = {};
+  @state() providerTestResults: Record<string, { ok: boolean; message: string }> = {};
+  @state() driversUiLoading = false;
+  @state() driversUiSaving = false;
+  @state() driversUiTesting = false;
+  @state() driversUiError: string | null = null;
+  @state() driversUiNotice: string | null = null;
+  @state() driversRegistryRows: DriverRegistryEntry[] = [];
+  @state() driversProviderMatrix: DriverProvidersGroup[] = [];
+  @state() driversModelsTree: DriverModelsGroup[] = [];
+  @state() driversSelectedId: string | null = null;
+  @state() driversSelectedProviderByDriver: Record<string, string> = {};
+  @state() driversCredentialDrafts: Record<string, string> = {};
+  @state() driversCredentialTypes: Record<string, ProviderCredentialType> = {};
+  @state() driversCredentialProfiles: Record<string, string> = {};
+  @state() driversCredentialSmokeResults: Record<string, DriverSmokeResult> = {};
+  @state() driversRouteSmokeResults: Record<string, DriverSmokeResult> = {};
   @state() agentFilesLoading = false;
   @state() agentFilesError: string | null = null;
   @state() agentFilesList: AgentsFilesListResult | null = null;

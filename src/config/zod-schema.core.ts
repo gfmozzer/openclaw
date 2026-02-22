@@ -39,6 +39,25 @@ export const ModelDefinitionSchema = z
     api: ModelApiSchema.optional(),
     reasoning: z.boolean().optional(),
     input: z.array(z.union([z.literal("text"), z.literal("image")])).optional(),
+    toolMode: z.boolean().optional(),
+    toolContract: z
+      .object({
+        kind: z
+          .union([
+            z.literal("generic"),
+            z.literal("chat"),
+            z.literal("image"),
+            z.literal("audio"),
+            z.literal("video"),
+          ])
+          .optional(),
+        description: z.string().optional(),
+        timeoutMs: z.number().int().positive().optional(),
+        inputSchema: z.record(z.string(), z.unknown()).optional(),
+        outputSchema: z.record(z.string(), z.unknown()).optional(),
+      })
+      .strict()
+      .optional(),
     cost: z
       .object({
         input: z.number().optional(),

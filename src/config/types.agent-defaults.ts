@@ -122,11 +122,11 @@ export type CliBackendConfig = {
 };
 
 export type AgentDefaultsConfig = {
-  /** Primary model and fallbacks (provider/model). */
+  /** Primary model and fallbacks (driver::provider/model, legacy provider/model). */
   model?: AgentModelListConfig;
-  /** Optional image-capable model and fallbacks (provider/model). */
+  /** Optional image-capable model and fallbacks (driver::provider/model, legacy provider/model). */
   imageModel?: AgentModelListConfig;
-  /** Model catalog with optional aliases (full provider/model keys). */
+  /** Model catalog with optional aliases (full provider/model keys; driver-aware routing is added at runtime). */
   models?: Record<string, AgentModelEntryConfig>;
   /** Agent working directory (preferred). Used as the default cwd for agent runs. */
   workspace?: string;
@@ -211,7 +211,7 @@ export type AgentDefaultsConfig = {
       /** Timezone for the window ("user", "local", or IANA TZ id). Default: "user". */
       timezone?: string;
     };
-    /** Heartbeat model override (provider/model). */
+    /** Heartbeat model override (driver::provider/model, legacy provider/model). */
     model?: string;
     /** Session key for heartbeat runs ("main" or explicit session key). */
     session?: string;

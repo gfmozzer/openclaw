@@ -19,7 +19,15 @@ describe("loadModelCatalog", () => {
     expect(first).toEqual([]);
 
     const second = await loadModelCatalog({ config: cfg });
-    expect(second).toEqual([{ id: "gpt-4.1", name: "GPT-4.1", provider: "openai" }]);
+    expect(second).toEqual([
+      {
+        id: "gpt-4.1",
+        name: "GPT-4.1",
+        provider: "openai",
+        driverId: "native",
+        modelRoute: "native::openai/gpt-4.1",
+      },
+    ]);
     expect(getCallCount()).toBe(2);
     expect(warnSpy).toHaveBeenCalledTimes(1);
   });
@@ -49,7 +57,15 @@ describe("loadModelCatalog", () => {
     );
 
     const result = await loadModelCatalog({ config: {} as OpenClawConfig });
-    expect(result).toEqual([{ id: "gpt-4.1", name: "GPT-4.1", provider: "openai" }]);
+    expect(result).toEqual([
+      {
+        id: "gpt-4.1",
+        name: "GPT-4.1",
+        provider: "openai",
+        driverId: "native",
+        modelRoute: "native::openai/gpt-4.1",
+      },
+    ]);
     expect(warnSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -90,5 +106,52 @@ describe("loadModelCatalog", () => {
     const spark = result.find((entry) => entry.id === "gpt-5.3-codex-spark");
     expect(spark?.name).toBe("gpt-5.3-codex-spark");
     expect(spark?.reasoning).toBe(true);
+  });
+
+  it("applies tool mode metadata from models.providers entries", async () => {
+    __setModelCatalogImportForTest(
+      async () =>
+        ({
+          AuthStorage: class {},
+          ModelRegistry: class {
+            getAll() {
+              return [{ id: "gpt-4.1", name: "GPT-4.1", provider: "openai" }];
+            }
+          },
+        }) as unknown as PiSdkModule,
+    );
+
+    const cfg = {
+      models: {
+        providers: {
+          openai: {
+            baseUrl: "https://api.openai.com/v1",
+            models: [
+              {
+                id: "gpt-4.1",
+                name: "GPT-4.1",
+                toolMode: true,
+                toolContract: {
+                  kind: "image",
+                  description: "Generate marketing image payload from prompt variables",
+                },
+              },
+            ],
+          },
+        },
+      },
+    } as unknown as OpenClawConfig;
+
+    const result = await loadModelCatalog({ config: cfg });
+    expect(result).toContainEqual(
+      expect.objectContaining({
+        id: "gpt-4.1",
+        provider: "openai",
+        toolMode: true,
+        toolContract: expect.objectContaining({
+          kind: "image",
+        }),
+      }),
+    );
   });
 });

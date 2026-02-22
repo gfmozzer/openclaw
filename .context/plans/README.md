@@ -19,6 +19,15 @@ This directory contains plans for coordinating work across documentation and pla
 14. [Front Plan 1 Chat Portal And Rich Renderers](./front-plan-1-chat-portal-and-rich-renderers.md)
 15. [Front Plan 2 Admin Ops Jobs Swarm Skills](./front-plan-2-admin-ops-jobs-swarm-skills.md)
 16. [Front Plan 3 Docs Faq I18n Theme And Polish](./front-plan-3-docs-faq-i18n-theme-and-polish.md)
+17. [Provider Model UX Master Plan](./provider-model-ux-master-plan.md)
+18. [Provider Model Plan 0 Backend Contract And Security](./provider-model-plan-0-backend-contract-and-security.md)
+19. [Provider Model Plan 1 Frontend Credentials And Model Picker](./provider-model-plan-1-frontend-credentials-and-model-picker.md)
+20. [Provider Model Plan 2 Migration Hardening And Rollout](./provider-model-plan-2-migration-hardening-and-rollout.md)
+21. [Driver Provider Runtime Master Plan](./driver-provider-runtime-master-plan.md)
+22. [Driver Provider Plan 0 Domain And Compat](./driver-provider-plan-0-domain-and-compat.md)
+23. [Driver Provider Plan 1 Runtime Loader And Env Gating](./driver-provider-plan-1-runtime-loader-and-env-gating.md)
+24. [Driver Provider Plan 2 Credentials Discovery And Smoke](./driver-provider-plan-2-credentials-discovery-and-smoke.md)
+25. [Driver Provider Plan 3 UI Swarm Ops And Rollout](./driver-provider-plan-3-ui-swarm-ops-and-rollout.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

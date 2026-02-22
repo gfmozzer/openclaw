@@ -40,6 +40,7 @@ import {
   pruneLegacyStoreKeys,
   readSessionPreviewItemsFromTranscript,
   resolveGatewaySessionStoreTarget,
+  resolveSessionModelRoute,
   resolveSessionModelRef,
   resolveSessionTranscriptCandidates,
   type SessionsPatchResult,
@@ -323,14 +324,21 @@ export const sessionsHandlers: GatewayRequestHandlers = {
     const parsed = parseAgentSessionKey(target.canonicalKey ?? key);
     const agentId = normalizeAgentId(parsed?.agentId ?? resolveDefaultAgentId(cfg));
     const resolved = resolveSessionModelRef(cfg, applied.entry, agentId);
+    const resolvedRoute = resolveSessionModelRoute({
+      cfg,
+      entry: applied.entry,
+      agentId,
+    });
     const result: SessionsPatchResult = {
       ok: true,
       path: storePath,
       key: target.canonicalKey,
       entry: applied.entry,
       resolved: {
+        modelDriver: resolvedRoute.driver,
         modelProvider: resolved.provider,
         model: resolved.model,
+        modelRoute: resolvedRoute.route,
       },
     };
     respond(true, result, undefined);

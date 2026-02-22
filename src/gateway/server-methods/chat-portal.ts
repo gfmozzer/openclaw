@@ -1,4 +1,5 @@
 import { Socket } from "node:net";
+import { resolveDriverRuntime } from "../../agents/driver-runtime.js";
 import { resolveStatelessBackendMode } from "../stateless/runtime.js";
 import { resolveRedisRuntimeConfig } from "../stateless/adapters/node/index.js";
 import { createS3Client, listKeys, resolveS3StatelessConfig } from "../stateless/adapters/node/s3-shared.js";
@@ -213,10 +214,18 @@ export const chatPortalHandlers: GatewayRequestHandlers = {
   },
   "chat.portal.stack.status": async ({ respond }) => {
     const [redis, s3, postgres] = await Promise.all([probeRedis(), probeS3(), probePostgres()]);
+    const drivers = resolveDriverRuntime();
     respond(
       true,
       {
         statelessBackend: resolveStatelessBackendMode(),
+        drivers: {
+          defaultDriver: drivers.defaultDriver,
+          enabled: drivers.enabledDrivers,
+          loaded: drivers.loadedDrivers,
+          failed: drivers.failedDrivers,
+          details: drivers.drivers,
+        },
         probes: {
           redis,
           s3,

@@ -13,6 +13,10 @@ Welcome to the repository knowledge base. This is a fork of OpenClaw transformed
 - [Tooling & Productivity Guide](./tooling.md) — env vars, local Postgres setup, key scripts
 - [Swarm Worker Quickstart](./swarm-worker-quickstart.md) — montar time supervisor/worker e validar politica
 - [FAQ Enterprise Ops](./faq-enterprise-ops.md) — token/modelo/canais/scheduler/swarm
+- [Cron Jobs Console Guide](./cron-jobs-console.md) — como operar e interpretar a pagina `/cron`
+- [Config Console Guide](./config-console-guide.md) — guia completo da pagina `/config` (sidebar, subtabs e botoes)
+- [Driver Onboarding Runbook](./driver-onboarding-runbook.md) — como adicionar drivers/SDKs por container com env gating, credenciais e validacao
+- [Driver/Provider UI Rollout Guide](./driver-provider-ui-rollout-guide.md) — operacao da UI `/drivers`, `/providers`, `Agents` e `Swarm` para driver/provider/model
 
 ## Enterprise Workflows
 All transformation workflows are in `.agent/workflows/` (01–16).
@@ -86,3 +90,7 @@ See [Project Overview](./project-overview.md) for status of each.
 | Tooling & Productivity Guide | `tooling.md` | CLI scripts, IDE configs, automation workflows |
 | Swarm Worker Quickstart | `swarm-worker-quickstart.md` | Operacao de times supervisor/worker e cron policy |
 | FAQ Enterprise Ops | `faq-enterprise-ops.md` | Perguntas recorrentes de setup e operacao |
+| Cron Jobs Console Guide | `cron-jobs-console.md` | Operacao detalhada da aba `/cron`, status e troubleshooting |
+| Config Console Guide | `config-console-guide.md` | Operacao detalhada da aba `/config`, modos, secoes e acoes |
+| Driver Onboarding Runbook | `driver-onboarding-runbook.md` | Arquitetura driver/provider, env gating por container, rollout e onboarding de SDKs |
+| Driver/Provider UI Rollout Guide | `driver-provider-ui-rollout-guide.md` | Operacao guiada no frontend para drivers/providers/modelos, smoke tests e swarm |

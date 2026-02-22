@@ -132,6 +132,34 @@ import {
   LogsTailResultSchema,
   type ModelsListParams,
   ModelsListParamsSchema,
+  type ProvidersRegistryListParams,
+  ProvidersRegistryListParamsSchema,
+  type DriversCredentialsListParams,
+  DriversCredentialsListParamsSchema,
+  type DriversCredentialsUpsertParams,
+  DriversCredentialsUpsertParamsSchema,
+  type DriversCredentialsDeleteParams,
+  DriversCredentialsDeleteParamsSchema,
+  type DriversCredentialsTestParams,
+  DriversCredentialsTestParamsSchema,
+  type ProvidersCredentialsListParams,
+  ProvidersCredentialsListParamsSchema,
+  type ProvidersCredentialsUpsertParams,
+  ProvidersCredentialsUpsertParamsSchema,
+  type ProvidersCredentialsDeleteParams,
+  ProvidersCredentialsDeleteParamsSchema,
+  type ProvidersCredentialsTestParams,
+  ProvidersCredentialsTestParamsSchema,
+  type ProvidersModelsListParams,
+  ProvidersModelsListParamsSchema,
+  type DriversRegistryListParams,
+  DriversRegistryListParamsSchema,
+  type DriversModelsListParams,
+  DriversModelsListParamsSchema,
+  type DriversProvidersListParams,
+  DriversProvidersListParamsSchema,
+  type DriversSmokeTestParams,
+  DriversSmokeTestParamsSchema,
   type NodeDescribeParams,
   NodeDescribeParamsSchema,
   type NodeEventParams,
@@ -322,6 +350,35 @@ export const validateChannelsLogoutParams = ajv.compile<ChannelsLogoutParams>(
   ChannelsLogoutParamsSchema,
 );
 export const validateModelsListParams = ajv.compile<ModelsListParams>(ModelsListParamsSchema);
+export const validateProvidersRegistryListParams = ajv.compile<ProvidersRegistryListParams>(
+  ProvidersRegistryListParamsSchema,
+);
+export const validateDriversCredentialsListParams =
+  ajv.compile<DriversCredentialsListParams>(DriversCredentialsListParamsSchema);
+export const validateDriversCredentialsUpsertParams =
+  ajv.compile<DriversCredentialsUpsertParams>(DriversCredentialsUpsertParamsSchema);
+export const validateDriversCredentialsDeleteParams =
+  ajv.compile<DriversCredentialsDeleteParams>(DriversCredentialsDeleteParamsSchema);
+export const validateDriversCredentialsTestParams =
+  ajv.compile<DriversCredentialsTestParams>(DriversCredentialsTestParamsSchema);
+export const validateProvidersCredentialsListParams =
+  ajv.compile<ProvidersCredentialsListParams>(ProvidersCredentialsListParamsSchema);
+export const validateProvidersCredentialsUpsertParams =
+  ajv.compile<ProvidersCredentialsUpsertParams>(ProvidersCredentialsUpsertParamsSchema);
+export const validateProvidersCredentialsDeleteParams =
+  ajv.compile<ProvidersCredentialsDeleteParams>(ProvidersCredentialsDeleteParamsSchema);
+export const validateProvidersCredentialsTestParams =
+  ajv.compile<ProvidersCredentialsTestParams>(ProvidersCredentialsTestParamsSchema);
+export const validateProvidersModelsListParams =
+  ajv.compile<ProvidersModelsListParams>(ProvidersModelsListParamsSchema);
+export const validateDriversRegistryListParams =
+  ajv.compile<DriversRegistryListParams>(DriversRegistryListParamsSchema);
+export const validateDriversModelsListParams =
+  ajv.compile<DriversModelsListParams>(DriversModelsListParamsSchema);
+export const validateDriversProvidersListParams =
+  ajv.compile<DriversProvidersListParams>(DriversProvidersListParamsSchema);
+export const validateDriversSmokeTestParams =
+  ajv.compile<DriversSmokeTestParams>(DriversSmokeTestParamsSchema);
 export const validateSkillsStatusParams = ajv.compile<SkillsStatusParams>(SkillsStatusParamsSchema);
 export const validateSkillsBinsParams = ajv.compile<SkillsBinsParams>(SkillsBinsParamsSchema);
 export const validateSkillsInstallParams =
@@ -492,6 +549,20 @@ export {
   AgentsListParamsSchema,
   AgentsListResultSchema,
   ModelsListParamsSchema,
+  ProvidersRegistryListParamsSchema,
+  DriversCredentialsListParamsSchema,
+  DriversCredentialsUpsertParamsSchema,
+  DriversCredentialsDeleteParamsSchema,
+  DriversCredentialsTestParamsSchema,
+  ProvidersCredentialsListParamsSchema,
+  ProvidersCredentialsUpsertParamsSchema,
+  ProvidersCredentialsDeleteParamsSchema,
+  ProvidersCredentialsTestParamsSchema,
+  ProvidersModelsListParamsSchema,
+  DriversRegistryListParamsSchema,
+  DriversModelsListParamsSchema,
+  DriversProvidersListParamsSchema,
+  DriversSmokeTestParamsSchema,
   SkillsStatusParamsSchema,
   SkillsInstallParamsSchema,
   SkillsRemoteTestParamsSchema,
@@ -517,6 +588,23 @@ export {
   PROTOCOL_VERSION,
   ErrorCodes,
   errorShape,
+};
+
+export type {
+  ProvidersRegistryListParams,
+  DriversCredentialsListParams,
+  DriversCredentialsUpsertParams,
+  DriversCredentialsDeleteParams,
+  DriversCredentialsTestParams,
+  ProvidersCredentialsListParams,
+  ProvidersCredentialsUpsertParams,
+  ProvidersCredentialsDeleteParams,
+  ProvidersCredentialsTestParams,
+  ProvidersModelsListParams,
+  DriversRegistryListParams,
+  DriversModelsListParams,
+  DriversProvidersListParams,
+  DriversSmokeTestParams,
 };
 
 export type {

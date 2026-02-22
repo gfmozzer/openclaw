@@ -5,6 +5,7 @@ import type {
   SwarmTeamDefinition,
   SwarmWorkerForm,
 } from "../controllers/swarm.ts";
+import type { ProviderModelsGroup } from "../controllers/providers.ts";
 
 export type AgentSwarmProps = {
   agentId: string;
@@ -15,6 +16,9 @@ export type AgentSwarmProps = {
   selectedTeamId: string | null;
   form: SwarmFormState;
   availableAgentIds: string[];
+  runtimeDriversLoaded?: string[];
+  runtimeDriversEnabled?: string[];
+  providersModels?: ProviderModelsGroup[];
   onRefresh: () => void;
   onCreate: () => void;
   onSelectTeam: (teamId: string) => void;
@@ -90,6 +94,17 @@ function renderWorkerRow(
 
 export function renderAgentSwarm(props: AgentSwarmProps) {
   const filteredTeams = props.teams.filter((team) => team.supervisorAgentId === props.agentId);
+  const providerCatalog = props.providersModels ?? [];
+  const providerInventory = providerCatalog
+    .map((group) => ({
+      providerId: group.providerId,
+      modelCount: group.models.length,
+      toolModeCount: group.models.filter((m) => m.toolMode).length,
+      drivers: Array.from(
+        new Set(group.models.map((m) => (m.driverId?.trim() ? m.driverId : "default"))),
+      ).sort((a, b) => a.localeCompare(b)),
+    }))
+    .sort((a, b) => a.providerId.localeCompare(b.providerId));
   return html`
     <section class="card">
       <div class="row" style="justify-content: space-between; margin-bottom: 12px;">
@@ -109,6 +124,25 @@ export function renderAgentSwarm(props: AgentSwarmProps) {
 
       <div class="callout" style="margin-bottom: 14px;">
         <strong>${t("swarmPage.enterpriseContext")}:</strong> ${t("swarmPage.enterpriseContextText")}
+      </div>
+
+      <div class="callout" style="margin-bottom: 14px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">Runtime capability inventory (instância atual)</div>
+        <div class="row" style="gap: 8px; flex-wrap: wrap;">
+          <span class="chip">drivers enabled: ${(props.runtimeDriversEnabled ?? []).length}</span>
+          <span class="chip">drivers loaded: ${(props.runtimeDriversLoaded ?? []).length}</span>
+          <span class="chip">providers catalog: ${providerInventory.length}</span>
+          <span class="chip">
+            models catalog: ${providerInventory.reduce((acc, item) => acc + item.modelCount, 0)}
+          </span>
+          <span class="chip">
+            tool routes: ${providerInventory.reduce((acc, item) => acc + item.toolModeCount, 0)}
+          </span>
+        </div>
+        <div class="muted" style="margin-top: 8px;">
+          Use este inventário como referência para definir perfis de instalação por worker no Docker Swarm
+          (drivers no ENV + providers/rotas autorizados). O runtime real de cada worker depende do container dele.
+        </div>
       </div>
 
       ${props.error ? html`<div class="callout danger" style="margin-bottom: 14px;">${props.error}</div>` : nothing}
@@ -180,6 +214,28 @@ export function renderAgentSwarm(props: AgentSwarmProps) {
               ? html`<div class="muted" style="margin-bottom: 12px;">${t("swarmPage.noWorkers")}</div>`
               : props.form.workers.map((worker, index) => renderWorkerRow(props, worker, index))
           }
+
+          <div class="card" style="padding: 12px; margin-top: 8px;">
+            <div class="card-sub" style="margin-bottom: 8px;">Provider/model inventory reference</div>
+            <div class="list" style="max-height: 220px; overflow: auto;">
+              ${providerInventory.length === 0
+                ? html`<div class="list-item muted">Catálogo de providers/modelos não carregado nesta sessão.</div>`
+                : providerInventory.map(
+                    (entry) => html`
+                      <div class="list-item">
+                        <div class="list-main">
+                          <div class="list-title">${entry.providerId}</div>
+                          <div class="list-sub mono">drivers: ${entry.drivers.join(", ") || "n/a"}</div>
+                        </div>
+                        <div class="list-meta">
+                          <span class="chip">models: ${entry.modelCount}</span>
+                          <span class="chip">tool: ${entry.toolModeCount}</span>
+                        </div>
+                      </div>
+                    `,
+                  )}
+            </div>
+          </div>
 
           <div class="row" style="gap: 8px; justify-content: flex-end; margin-top: 10px;">
             ${

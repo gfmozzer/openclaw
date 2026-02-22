@@ -1,4 +1,5 @@
 import { listChannelPlugins } from "../channels/plugins/index.js";
+import { isProvidersRpcEnabled } from "./providers-feature-flag.js";
 import { GATEWAY_EVENT_UPDATE_AVAILABLE } from "./events.js";
 
 const BASE_METHODS = [
@@ -106,7 +107,26 @@ const BASE_METHODS = [
 
 export function listGatewayMethods(): string[] {
   const channelMethods = listChannelPlugins().flatMap((plugin) => plugin.gatewayMethods ?? []);
-  return Array.from(new Set([...BASE_METHODS, ...channelMethods]));
+  const methods = [...BASE_METHODS, ...channelMethods];
+  if (isProvidersRpcEnabled()) {
+    methods.push(
+      "drivers.registry.list",
+      "drivers.providers.list",
+      "drivers.credentials.list",
+      "drivers.credentials.upsert",
+      "drivers.credentials.delete",
+      "drivers.credentials.test",
+      "drivers.models.list",
+      "drivers.smoke.test",
+      "providers.registry.list",
+      "providers.credentials.list",
+      "providers.credentials.upsert",
+      "providers.credentials.delete",
+      "providers.credentials.test",
+      "providers.models.list",
+    );
+  }
+  return Array.from(new Set(methods));
 }
 
 export const GATEWAY_EVENTS = [

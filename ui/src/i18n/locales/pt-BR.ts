@@ -32,6 +32,8 @@ export const pt_BR: TranslationMap = {
   },
   tabs: {
     agents: "Agentes",
+    drivers: "Drivers",
+    providers: "Providers",
     overview: "Visão Geral",
     channels: "Canais",
     instances: "Instâncias",
@@ -50,6 +52,8 @@ export const pt_BR: TranslationMap = {
   },
   subtitles: {
     agents: "Gerenciar espaços de trabalho, ferramentas e identidades de agentes.",
+    drivers: "Diagnóstico de drivers carregados e saúde de integração por instância.",
+    providers: "Gerenciar credenciais de providers e disponibilidade de modelos.",
     overview: "Status do gateway, pontos de entrada e leitura rápida de saúde.",
     channels: "Gerenciar canais e configurações.",
     instances: "Beacons de presença de clientes e nós conectados.",

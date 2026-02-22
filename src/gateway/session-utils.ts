@@ -8,6 +8,11 @@ import {
   resolveConfiguredModelRef,
   resolveDefaultModelForAgent,
 } from "../agents/model-selection.js";
+import {
+  DEFAULT_DRIVER_ID,
+  formatModelRoute,
+  parseModelRouteRef,
+} from "../agents/model-route.js";
 import { type OpenClawConfig, loadConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
 import {
@@ -631,13 +636,32 @@ export function getSessionDefaults(cfg: OpenClawConfig): GatewaySessionsDefaults
     defaultProvider: DEFAULT_PROVIDER,
     defaultModel: DEFAULT_MODEL,
   });
+  const configuredPrimary = cfg.agents?.defaults?.model?.primary;
+  const parsedConfiguredRoute =
+    typeof configuredPrimary === "string"
+      ? parseModelRouteRef({
+          raw: configuredPrimary,
+          defaultProvider: resolved.provider ?? DEFAULT_PROVIDER,
+          defaultDriver: DEFAULT_DRIVER_ID,
+        })
+      : null;
+  const modelDriver = parsedConfiguredRoute?.driver ?? DEFAULT_DRIVER_ID;
+  const modelRoute = formatModelRoute(
+    parsedConfiguredRoute ?? {
+      driver: modelDriver,
+      provider: resolved.provider ?? DEFAULT_PROVIDER,
+      model: resolved.model ?? DEFAULT_MODEL,
+    },
+  );
   const contextTokens =
     cfg.agents?.defaults?.contextTokens ??
     lookupContextTokens(resolved.model) ??
     DEFAULT_CONTEXT_TOKENS;
   return {
+    modelDriver,
     modelProvider: resolved.provider ?? null,
     model: resolved.model ?? null,
+    modelRoute,
     contextTokens: contextTokens ?? null,
   };
 }
@@ -693,6 +717,42 @@ export function resolveSessionModelRef(
     }
   }
   return { provider, model };
+}
+
+export function resolveSessionModelRoute(params: {
+  cfg: OpenClawConfig;
+  entry?:
+    | SessionEntry
+    | Pick<SessionEntry, "model" | "modelProvider" | "modelOverride" | "providerOverride">;
+  agentId?: string;
+}): { driver: string; provider: string; model: string; route: string } {
+  const resolvedRef = resolveSessionModelRef(params.cfg, params.entry, params.agentId);
+  const runtimeModel = params.entry?.model?.trim();
+  const runtimeProvider = params.entry?.modelProvider?.trim();
+  if (runtimeModel) {
+    const parsedRuntimeRoute = parseModelRouteRef({
+      raw: runtimeModel,
+      defaultProvider: runtimeProvider || resolvedRef.provider || DEFAULT_PROVIDER,
+      defaultDriver: DEFAULT_DRIVER_ID,
+    });
+    if (parsedRuntimeRoute) {
+      return {
+        driver: parsedRuntimeRoute.driver,
+        provider: parsedRuntimeRoute.provider,
+        model: parsedRuntimeRoute.model,
+        route: formatModelRoute(parsedRuntimeRoute),
+      };
+    }
+  }
+  const route = {
+    driver: DEFAULT_DRIVER_ID,
+    provider: resolvedRef.provider,
+    model: resolvedRef.model,
+  };
+  return {
+    ...route,
+    route: formatModelRoute(route),
+  };
 }
 
 export function listSessionsFromStore(params: {
@@ -785,9 +845,15 @@ export function listSessionsFromStore(params: {
       const deliveryFields = normalizeSessionDeliveryFields(entry);
       const parsedAgent = parseAgentSessionKey(key);
       const sessionAgentId = normalizeAgentId(parsedAgent?.agentId ?? resolveDefaultAgentId(cfg));
-      const resolvedModel = resolveSessionModelRef(cfg, entry, sessionAgentId);
-      const modelProvider = resolvedModel.provider ?? DEFAULT_PROVIDER;
-      const model = resolvedModel.model ?? DEFAULT_MODEL;
+      const resolvedModelRoute = resolveSessionModelRoute({
+        cfg,
+        entry,
+        agentId: sessionAgentId,
+      });
+      const modelDriver = resolvedModelRoute.driver ?? DEFAULT_DRIVER_ID;
+      const modelProvider = resolvedModelRoute.provider ?? DEFAULT_PROVIDER;
+      const model = resolvedModelRoute.model ?? DEFAULT_MODEL;
+      const modelRoute = resolvedModelRoute.route;
       return {
         key,
         entry,
@@ -814,8 +880,10 @@ export function listSessionsFromStore(params: {
         totalTokens: total,
         totalTokensFresh,
         responseUsage: entry?.responseUsage,
+        modelDriver,
         modelProvider,
         model,
+        modelRoute,
         contextTokens: entry?.contextTokens,
         deliveryContext: deliveryFields.deliveryContext,
         lastChannel: deliveryFields.lastChannel ?? entry?.lastChannel,

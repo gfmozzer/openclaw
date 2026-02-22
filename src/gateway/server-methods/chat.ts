@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { CURRENT_SESSION_VERSION, SessionManager } from "@mariozechner/pi-coding-agent";
 import { resolveSessionAgentId } from "../../agents/agent-scope.js";
+import { resolveDriverRuntime } from "../../agents/driver-runtime.js";
+import { DEFAULT_DRIVER_ID, formatModelRoute, parseModelRouteRef } from "../../agents/model-route.js";
 import { resolveThinkingDefault } from "../../agents/model-selection.js";
 import { resolveAgentTimeoutMs } from "../../agents/timeout.js";
 import { dispatchInboundMessage } from "../../auto-reply/dispatch.js";
@@ -39,6 +41,7 @@ import {
   capArrayByJsonBytes,
   loadSessionEntry,
   readSessionMessages,
+  resolveSessionModelRoute,
   resolveSessionModelRef,
 } from "../session-utils.js";
 import { formatForLog } from "../ws-log.js";
@@ -73,6 +76,13 @@ type ChatRequestOverrides = {
   apiKey?: string;
   authProfileId?: string;
   skillAllowlist?: string[];
+};
+
+type ChatObservedModelRoute = {
+  driver: string;
+  provider: string;
+  model: string;
+  modelRoute: string;
 };
 
 function sanitizeChatRequestOverrides(raw: unknown): ChatRequestOverrides | undefined {
@@ -115,6 +125,66 @@ function sanitizeChatRequestOverrides(raw: unknown): ChatRequestOverrides | unde
     return undefined;
   }
   return overrides;
+}
+
+function resolveObservedModelRoute(params: {
+  cfg: ReturnType<typeof loadSessionEntry>["cfg"];
+  entry: ReturnType<typeof loadSessionEntry>["entry"];
+  agentId: string;
+  requestOverrides?: ChatRequestOverrides;
+}): ChatObservedModelRoute {
+  const base = resolveSessionModelRoute({
+    cfg: params.cfg,
+    entry: params.entry ?? undefined,
+    agentId: params.agentId,
+  });
+  const overrideProvider = params.requestOverrides?.provider?.trim().toLowerCase();
+  const overrideModelRaw = params.requestOverrides?.model?.trim();
+  if (!overrideProvider && !overrideModelRaw) {
+    return {
+      driver: base.driver,
+      provider: base.provider,
+      model: base.model,
+      modelRoute: formatModelRoute(
+        {
+          driver: base.driver,
+          provider: base.provider,
+          model: base.model,
+        },
+        { includeNativeDriver: true },
+      ),
+    };
+  }
+
+  const defaultProvider = overrideProvider || base.provider;
+  const modelRaw = overrideModelRaw || base.model;
+  const parsed = parseModelRouteRef({
+    raw: modelRaw,
+    defaultProvider,
+    defaultDriver: DEFAULT_DRIVER_ID,
+  });
+  if (parsed) {
+    return {
+      driver: parsed.driver,
+      provider: parsed.provider,
+      model: parsed.model,
+      modelRoute: formatModelRoute(parsed, { includeNativeDriver: true }),
+    };
+  }
+
+  return {
+    driver: DEFAULT_DRIVER_ID,
+    provider: defaultProvider,
+    model: modelRaw,
+    modelRoute: formatModelRoute(
+      {
+        driver: DEFAULT_DRIVER_ID,
+        provider: defaultProvider,
+        model: modelRaw,
+      },
+      { includeNativeDriver: true },
+    ),
+  };
 }
 
 function hasScope(scopes: readonly string[] | undefined, scope: string): boolean {
@@ -1006,6 +1076,10 @@ export const chatHandlers: GatewayRequestHandlers = {
     }
     const rawSessionKey = p.sessionKey;
     const { cfg, entry, canonicalKey: sessionKey } = loadSessionEntry(rawSessionKey);
+    const agentId = resolveSessionAgentId({
+      sessionKey,
+      config: cfg,
+    });
     const statelessScope = resolveChatStatelessScope({ context, sessionKey, cfg });
     const idempotencyScope: IdempotencyScope | null =
       statelessScope && context.idempotencyStore
@@ -1021,6 +1095,52 @@ export const chatHandlers: GatewayRequestHandlers = {
       overrideMs: p.timeoutMs,
     });
     const requestOverrides = sanitizeChatRequestOverrides(p.overrides);
+    const observedModelRoute = resolveObservedModelRoute({
+      cfg,
+      entry,
+      agentId,
+      requestOverrides,
+    });
+    const driverRuntime = resolveDriverRuntime();
+    if (!driverRuntime.loadedDrivers.includes(observedModelRoute.driver)) {
+      const failedDriver = driverRuntime.failedDrivers.find(
+        (candidate) => candidate.driverId === observedModelRoute.driver,
+      );
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.INVALID_REQUEST,
+          `model driver "${observedModelRoute.driver}" is not available on this gateway instance`,
+          {
+            details: {
+              modelRoute: observedModelRoute.modelRoute,
+              reason: failedDriver?.reason,
+              loadedDrivers: driverRuntime.loadedDrivers,
+              enabledDrivers: driverRuntime.enabledDrivers,
+            },
+          },
+        ),
+      );
+      return;
+    }
+    if (observedModelRoute.driver === "fal") {
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.INVALID_REQUEST,
+          'driver "fal" is currently tool-mode only and cannot be used as the primary chat model',
+          {
+            details: {
+              modelRoute: observedModelRoute.modelRoute,
+              recommendedUsage: "use as Tool Mode route (media/API tool) instead of chat.send primary model",
+            },
+          },
+        ),
+      );
+      return;
+    }
     if (
       requestOverrides &&
       (requestOverrides.apiKey || requestOverrides.authProfileId) &&
@@ -1049,6 +1169,8 @@ export const chatHandlers: GatewayRequestHandlers = {
           metadata: {
             provider: requestOverrides.provider,
             model: requestOverrides.model,
+            driverId: observedModelRoute.driver,
+            modelRoute: observedModelRoute.modelRoute,
             hasApiKey: Boolean(requestOverrides.apiKey),
             hasAuthProfileId: Boolean(requestOverrides.authProfileId),
           },
@@ -1192,6 +1314,10 @@ export const chatHandlers: GatewayRequestHandlers = {
         sessionKey: rawSessionKey,
         payload: {
           runId: clientRunId,
+          modelDriver: observedModelRoute.driver,
+          modelProvider: observedModelRoute.provider,
+          model: observedModelRoute.model,
+          modelRoute: observedModelRoute.modelRoute,
         },
       }).catch(() => {});
       respond(true, ackPayload, undefined, { runId: clientRunId });
@@ -1226,10 +1352,6 @@ export const chatHandlers: GatewayRequestHandlers = {
         GatewayClientScopes: client?.connect?.scopes,
       };
 
-      const agentId = resolveSessionAgentId({
-        sessionKey,
-        config: cfg,
-      });
       const { onModelSelected, ...prefixOptions } = createReplyPrefixOptions({
         cfg,
         agentId,
@@ -1342,6 +1464,10 @@ export const chatHandlers: GatewayRequestHandlers = {
               payload: {
                 runId: clientRunId,
                 hasMessage: Boolean(message),
+                modelDriver: observedModelRoute.driver,
+                modelProvider: observedModelRoute.provider,
+                model: observedModelRoute.model,
+                modelRoute: observedModelRoute.modelRoute,
               },
             }).catch(() => {});
           }
@@ -1382,6 +1508,10 @@ export const chatHandlers: GatewayRequestHandlers = {
             payload: {
               runId: clientRunId,
               error: String(err),
+              modelDriver: observedModelRoute.driver,
+              modelProvider: observedModelRoute.provider,
+              model: observedModelRoute.model,
+              modelRoute: observedModelRoute.modelRoute,
             },
           }).catch(() => {});
           if (idempotencyScope && context.idempotencyStore) {

@@ -4,6 +4,7 @@ import {
   normalizeToolName,
   resolveToolProfilePolicy,
 } from "../../../../src/agents/tool-policy-shared.js";
+import type { ProviderModelsGroup } from "../controllers/providers.ts";
 import type { AgentIdentityResult, AgentsFilesListResult, AgentsListResult } from "../types.ts";
 
 export const TOOL_SECTIONS = [
@@ -365,19 +366,49 @@ function resolveConfiguredModels(
   return options;
 }
 
-export function buildModelOptions(
+export function resolveModelOptions(
   configForm: Record<string, unknown> | null,
+  providersModels: ProviderModelsGroup[] = [],
   current?: string | null,
-) {
-  const options = resolveConfiguredModels(configForm);
+): ConfiguredModelOption[] {
+  const options: ConfiguredModelOption[] = [];
+  for (const group of providersModels) {
+    const providerId = group.providerId?.trim();
+    if (!providerId) {
+      continue;
+    }
+    for (const model of group.models ?? []) {
+      const modelId = model.id?.trim();
+      if (!modelId) {
+        continue;
+      }
+      const routeValue = model.modelRoute?.trim() || "";
+      const fullId = `${providerId}/${modelId}`;
+      const value = routeValue || fullId;
+      const driverLabel = model.driverId?.trim() ? `${model.driverId} · ` : "";
+      const toolLabel = model.toolMode ? " · tool" : "";
+      const label = `${driverLabel}${providerId} · ${model.name?.trim() || modelId}${toolLabel}`;
+      options.push({ value, label });
+    }
+  }
+  if (options.length === 0) {
+    options.push(...resolveConfiguredModels(configForm));
+  }
   const hasCurrent = current ? options.some((option) => option.value === current) : false;
   if (current && !hasCurrent) {
     options.unshift({ value: current, label: `Current (${current})` });
   }
+  return options;
+}
+
+export function buildModelOptions(
+  configForm: Record<string, unknown> | null,
+  providersModels: ProviderModelsGroup[] = [],
+  current?: string | null,
+) {
+  const options = resolveModelOptions(configForm, providersModels, current);
   if (options.length === 0) {
-    return html`
-      <option value="" disabled>No configured models</option>
-    `;
+    return html`<option value="" disabled>No configured models</option>`;
   }
   return options.map((option) => html`<option value=${option.value}>${option.label}</option>`);
 }

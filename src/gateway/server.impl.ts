@@ -1,5 +1,6 @@
 import path from "node:path";
 import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../agents/agent-scope.js";
+import { preloadExternalDrivers, resolveDriverRuntime } from "../agents/driver-runtime.js";
 import { getActiveEmbeddedRunCount } from "../agents/pi-embedded-runner/runs.js";
 import { registerSkillsChangeListener } from "../agents/skills/refresh.js";
 import { initSubagentRegistry } from "../agents/subagent-registry.js";
@@ -675,6 +676,16 @@ export async function startGatewayServer(
     log,
     isNixMode,
   });
+  await preloadExternalDrivers().catch((err) => {
+    log.warn(`driver preload failed: ${err instanceof Error ? err.message : String(err)}`);
+  });
+  const driverRuntime = resolveDriverRuntime();
+  log.info(
+    `drivers: default=${driverRuntime.defaultDriver} enabled=${driverRuntime.enabledDrivers.join(",") || "none"} loaded=${driverRuntime.loadedDrivers.join(",") || "none"}`,
+  );
+  for (const failedDriver of driverRuntime.failedDrivers) {
+    log.warn(`driver load skipped: ${failedDriver.driverId} (${failedDriver.reason})`);
+  }
   if (!minimalTestGateway) {
     scheduleGatewayUpdateCheck({
       cfg: cfgAtStart,

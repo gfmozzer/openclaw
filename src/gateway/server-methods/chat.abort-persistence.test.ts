@@ -125,10 +125,84 @@ async function invokeChatAbort(
 }
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
 describe("chat abort transcript persistence", () => {
+  it("fails fast when selected model route uses an unavailable driver", async () => {
+    await createTranscriptFixture("openclaw-chat-driver-unavailable-");
+    vi.stubEnv("OPENCLAW_DRIVERS_ENABLED", "native");
+    vi.stubEnv("OPENCLAW_DRIVER_LITELLM_ENABLED", "0");
+    const respond = vi.fn();
+    const context = createChatAbortContext();
+
+    await chatHandlers["chat.send"]({
+      params: {
+        sessionKey: "main",
+        message: "ping",
+        idempotencyKey: "idem-driver-unavailable",
+        overrides: {
+          model: "litellm::openai/gpt-4o-mini",
+        },
+      },
+      respond,
+      context: context as never,
+      req: {} as never,
+      client: {
+        connect: {
+          role: "operator",
+          scopes: ["operator.write"],
+        },
+      } as never,
+      isWebchatConnect: () => false,
+    });
+
+    const [ok, payload, error] = respond.mock.calls.at(-1) ?? [];
+    expect(ok).toBe(false);
+    expect(payload).toBeUndefined();
+    expect(error).toMatchObject({
+      code: "INVALID_REQUEST",
+    });
+    expect(String(error?.message ?? "")).toContain('driver "litellm"');
+    expect(context.chatAbortControllers.size).toBe(0);
+  });
+
+  it("fails fast when selected model route uses fal driver as chat primary", async () => {
+    await createTranscriptFixture("openclaw-chat-fal-tool-only-");
+    vi.stubEnv("OPENCLAW_DRIVERS_ENABLED", "native,fal");
+    vi.stubEnv("OPENCLAW_DRIVER_FAL_ENABLED", "1");
+    const respond = vi.fn();
+    const context = createChatAbortContext();
+
+    await chatHandlers["chat.send"]({
+      params: {
+        sessionKey: "main",
+        message: "generate image",
+        idempotencyKey: "idem-fal-tool-only",
+        overrides: {
+          model: "fal::fal/fal-ai/flux/schnell",
+        },
+      },
+      respond,
+      context: context as never,
+      req: {} as never,
+      client: {
+        connect: {
+          role: "operator",
+          scopes: ["operator.write"],
+        },
+      } as never,
+      isWebchatConnect: () => false,
+    });
+
+    const [ok, payload, error] = respond.mock.calls.at(-1) ?? [];
+    expect(ok).toBe(false);
+    expect(payload).toBeUndefined();
+    expect(error).toMatchObject({ code: "INVALID_REQUEST" });
+    expect(String(error?.message ?? "")).toContain('driver "fal"');
+  });
+
   it("denies chat.send BYOK overrides without admin scope", async () => {
     const { sessionId } = await createTranscriptFixture("openclaw-chat-byok-scope-");
     const respond = vi.fn();

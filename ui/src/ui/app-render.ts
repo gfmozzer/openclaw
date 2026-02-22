@@ -59,6 +59,26 @@ import {
   type SwarmWorkerForm,
 } from "./controllers/swarm.ts";
 import {
+  loadDriversUi,
+  saveDriverCredential,
+  setDriversCredentialDraft,
+  setDriversCredentialType,
+  setDriversSelected,
+  setDriversSelectedProvider,
+  testDriverCredential,
+  testDriverRoute,
+  deleteDriverCredential,
+} from "./controllers/drivers.ts";
+import {
+  deleteProviderCredential,
+  loadProviders,
+  saveProviderCredential,
+  setProviderCredentialDraft,
+  setProviderCredentialType,
+  setProviderSelected,
+  testProviderCredential,
+} from "./controllers/providers.ts";
+import {
   getSkillExternalEndpointEdit,
   getSkillExternalPolicyEdit,
   getSkillExternalTestPayloadEdit,
@@ -82,6 +102,7 @@ import { renderConfig } from "./views/config.ts";
 import { renderCron } from "./views/cron.ts";
 import { renderDebug } from "./views/debug.ts";
 import { renderDocsView } from "./views/docs.ts";
+import { renderDrivers } from "./views/drivers.ts";
 import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
 import { renderFaqView } from "./views/faq.ts";
 import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
@@ -89,9 +110,11 @@ import { renderInstances } from "./views/instances.ts";
 import { renderLogs } from "./views/logs.ts";
 import { renderNodes } from "./views/nodes.ts";
 import { renderOverview } from "./views/overview.ts";
+import { renderProviders } from "./views/providers.ts";
 import { renderSessions } from "./views/sessions.ts";
 import { renderSkills } from "./views/skills.ts";
 import { renderLogin } from "./views/login.ts";
+import { isProvidersUiEnabled } from "./providers-feature-flag.ts";
 
 const AVATAR_DATA_RE = /^data:/i;
 const AVATAR_HTTP_RE = /^https?:\/\//i;
@@ -168,6 +191,7 @@ export function renderApp(state: AppViewState) {
     state.agentsList?.agents?.[0]?.id ??
     null;
   const temporalMode = isTemporalMode(state);
+  const providersUiEnabled = isProvidersUiEnabled(state.hello?.features?.methods);
   const visibleTabGroups = tabGroupsForMode(state.uiMode);
 
   return html`
@@ -506,8 +530,12 @@ export function renderApp(state: AppViewState) {
                 swarmTeams: state.swarmTeams,
                 swarmSelectedTeamId: state.swarmSelectedTeamId,
                 swarmForm: state.swarmForm,
+                providersModels: state.providersModels,
+                runtimeDriversLoaded: state.portalStackStatus?.drivers?.loaded ?? [],
+                runtimeDriversEnabled: state.portalStackStatus?.drivers?.enabled ?? [],
                 onRefresh: async () => {
                   await loadAgents(state);
+                  void loadProviders(state);
                   const agentIds = state.agentsList?.agents?.map((entry) => entry.id) ?? [];
                   if (agentIds.length > 0) {
                     void loadAgentIdentities(state, agentIds);
@@ -1071,6 +1099,106 @@ export function renderApp(state: AppViewState) {
                 assistantName: state.assistantName,
                 assistantAvatar: state.assistantAvatar,
               })
+            : nothing
+        }
+
+        ${
+          state.tab === "drivers"
+            ? providersUiEnabled
+              ? renderDrivers({
+                  loading: state.portalStackLoading || state.driversUiLoading,
+                  saving: state.driversUiSaving,
+                  testing: state.driversUiTesting,
+                  error: state.driversUiError ?? state.portalStackError,
+                  notice: state.driversUiNotice,
+                  stack: state.portalStackStatus,
+                  registry: state.driversRegistryRows,
+                  matrix: state.driversProviderMatrix,
+                  modelsTree: state.driversModelsTree,
+                  selectedDriverId: state.driversSelectedId,
+                  selectedProviderByDriver: state.driversSelectedProviderByDriver,
+                  drafts: state.driversCredentialDrafts,
+                  types: state.driversCredentialTypes,
+                  profiles: state.driversCredentialProfiles,
+                  credentialSmokeResults: state.driversCredentialSmokeResults,
+                  routeSmokeResults: state.driversRouteSmokeResults,
+                  onRefresh: () => {
+                    void loadDriversUi(state);
+                    void state.loadOverview();
+                  },
+                  onSyncModels: () => {
+                    state.driversUiNotice = "Sincronizando catálogo de modelos a partir do backend...";
+                    void loadDriversUi(state).then(() => {
+                      state.driversUiNotice =
+                        "Catálogo de modelos sincronizado a partir do snapshot atual do backend.";
+                    });
+                  },
+                  onSelectDriver: (driverId) => setDriversSelected(state, driverId),
+                  onSelectProvider: (driverId, providerId) =>
+                    setDriversSelectedProvider(state, driverId, providerId),
+                  onDraftChange: (driverId, providerId, value) =>
+                    setDriversCredentialDraft(state, driverId, providerId, value),
+                  onTypeChange: (driverId, providerId, value) =>
+                    setDriversCredentialType(state, driverId, providerId, value),
+                  onSaveCredential: (driverId, providerId) => {
+                    void saveDriverCredential(state, driverId, providerId);
+                  },
+                  onDeleteCredential: (driverId, providerId) => {
+                    void deleteDriverCredential(state, driverId, providerId);
+                  },
+                  onTestCredential: (driverId, providerId) => {
+                    void testDriverCredential(state, driverId, providerId);
+                  },
+                  onTestRoute: (driverId, providerId, modelRoute) => {
+                    void testDriverRoute(state, driverId, providerId, modelRoute);
+                  },
+                  onOpenProviders: () => {
+                    state.setTab("providers");
+                  },
+                })
+              : html`<div class="callout">Drivers/Providers UI desabilitada por feature flag.</div>`
+            : nothing
+        }
+
+        ${
+          state.tab === "providers"
+            ? providersUiEnabled
+              ? renderProviders({
+                  loading: state.providersLoading,
+                  saving: state.providersSaving,
+                  testing: state.providersTesting,
+                  error: state.providersError,
+                  notice: state.providersNotice,
+                  registry: state.providersRegistry,
+                  models: state.providersModels,
+                  selectedId: state.providersSelectedId,
+                  drafts: state.providerCredentialDrafts,
+                  types: state.providerCredentialTypes,
+                  profiles: state.providerCredentialProfiles,
+                  testResults: state.providerTestResults,
+                  onRefresh: () => {
+                    void loadProviders(state);
+                  },
+                  onSelect: (providerId) => {
+                    setProviderSelected(state, providerId);
+                  },
+                  onDraftChange: (providerId, value) => {
+                    setProviderCredentialDraft(state, providerId, value);
+                  },
+                  onTypeChange: (providerId, value) => {
+                    setProviderCredentialType(state, providerId, value);
+                  },
+                  onSaveCredential: (providerId) => {
+                    void saveProviderCredential(state, providerId);
+                  },
+                  onDeleteCredential: (providerId) => {
+                    void deleteProviderCredential(state, providerId);
+                  },
+                  onTestCredential: (providerId) => {
+                    void testProviderCredential(state, providerId);
+                  },
+                })
+              : html`<div class="callout">Providers UI desabilitada por feature flag.</div>`
             : nothing
         }
 

@@ -21,6 +21,9 @@ import { loadNodes } from "./controllers/nodes.ts";
 import { loadPortalContract } from "./controllers/portal-contract.ts";
 import { loadPortalStackStatus } from "./controllers/portal-stack.ts";
 import { loadPresence } from "./controllers/presence.ts";
+import { loadDriversUi } from "./controllers/drivers.ts";
+import { loadProviders } from "./controllers/providers.ts";
+import { isProvidersUiEnabled } from "./providers-feature-flag.ts";
 import { loadSessions } from "./controllers/sessions.ts";
 import { loadSkills } from "./controllers/skills.ts";
 import { loadSwarmTeams, resetSwarmForm } from "./controllers/swarm.ts";
@@ -61,10 +64,18 @@ type SettingsHost = {
   themeMedia: MediaQueryList | null;
   themeMediaHandler: ((event: MediaQueryListEvent) => void) | null;
   pendingGatewayUrl?: string | null;
+  hello?: { features?: { methods?: string[] } } | null;
   portalStackLoading?: boolean;
   portalStackStatus?: import("./types.ts").PortalStackStatus | null;
   portalStackError?: string | null;
 };
+
+function resolveRouteTabForHost(host: SettingsHost, next: Tab): Tab {
+  if (next !== "providers" && next !== "drivers") {
+    return next;
+  }
+  return isProvidersUiEnabled(host.hello?.features?.methods) ? next : "chat";
+}
 
 export function applySettings(host: SettingsHost, next: UiSettings) {
   const normalized = {
@@ -225,6 +236,7 @@ export async function refreshActiveTab(host: SettingsHost) {
   if (host.tab === "agents") {
     await loadAgents(host as unknown as OpenClawApp);
     await loadConfig(host as unknown as OpenClawApp);
+    void loadProviders(host as unknown as OpenClawApp);
     const agentIds = host.agentsList?.agents?.map((entry) => entry.id) ?? [];
     if (agentIds.length > 0) {
       void loadAgentIdentities(host as unknown as OpenClawApp, agentIds);
@@ -247,6 +259,15 @@ export async function refreshActiveTab(host: SettingsHost) {
         void loadSwarmTeams(host as unknown as Parameters<typeof loadSwarmTeams>[0]);
       }
     }
+  }
+  if (host.tab === "providers") {
+    await loadProviders(host as unknown as OpenClawApp);
+  }
+  if (host.tab === "drivers") {
+    await Promise.all([
+      loadPortalStackStatus(host as unknown as Parameters<typeof loadPortalStackStatus>[0]),
+      loadDriversUi(host as unknown as Parameters<typeof loadDriversUi>[0]),
+    ]);
   }
   if (host.tab === "nodes") {
     await loadNodes(host as unknown as OpenClawApp);
@@ -376,7 +397,7 @@ export function onPopState(host: SettingsHost) {
 }
 
 export function setTabFromRoute(host: SettingsHost, next: Tab) {
-  const resolved = resolveTabForMode(next, host.uiMode);
+  const resolved = resolveTabForMode(resolveRouteTabForHost(host, next), host.uiMode);
   if (host.tab !== resolved) {
     host.tab = resolved;
   }

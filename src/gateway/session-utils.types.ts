@@ -3,8 +3,10 @@ import type { SessionEntry } from "../config/sessions.js";
 import type { DeliveryContext } from "../utils/delivery-context.js";
 
 export type GatewaySessionsDefaults = {
+  modelDriver: string | null;
   modelProvider: string | null;
   model: string | null;
+  modelRoute: string | null;
   contextTokens: number | null;
 };
 
@@ -35,8 +37,10 @@ export type GatewaySessionRow = {
   totalTokens?: number;
   totalTokensFresh?: boolean;
   responseUsage?: "on" | "off" | "tokens" | "full";
+  modelDriver?: string;
   modelProvider?: string;
   model?: string;
+  modelRoute?: string;
   contextTokens?: number;
   deliveryContext?: DeliveryContext;
   lastChannel?: SessionEntry["lastChannel"];
@@ -86,7 +90,9 @@ export type SessionsPatchResult = {
   key: string;
   entry: SessionEntry;
   resolved?: {
+    modelDriver?: string;
     modelProvider?: string;
     model?: string;
+    modelRoute?: string;
   };
 };

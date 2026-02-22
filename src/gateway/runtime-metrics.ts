@@ -9,7 +9,10 @@ type EnterpriseMetricName =
   | "chat_tool_authorization_denied_total"
   | "chat_async_resume_total"
   | "chat_async_resume_failures_total"
-  | "byok_override_accepted_total";
+  | "byok_override_accepted_total"
+  | "provider_credential_upsert_total"
+  | "provider_credential_test_total"
+  | "provider_models_discovery_fail_total";
 
 type EnterpriseMetricsSnapshot = {
   generatedAt: number;
@@ -28,6 +31,9 @@ const counters: Record<EnterpriseMetricName, number> = {
   chat_async_resume_total: 0,
   chat_async_resume_failures_total: 0,
   byok_override_accepted_total: 0,
+  provider_credential_upsert_total: 0,
+  provider_credential_test_total: 0,
+  provider_models_discovery_fail_total: 0,
 };
 
 let lastUpdatedAt = Date.now();
@@ -60,5 +66,8 @@ export function resetEnterpriseMetricsForTest(): void {
   counters.chat_async_resume_total = 0;
   counters.chat_async_resume_failures_total = 0;
   counters.byok_override_accepted_total = 0;
+  counters.provider_credential_upsert_total = 0;
+  counters.provider_credential_test_total = 0;
+  counters.provider_models_discovery_fail_total = 0;
   lastUpdatedAt = Date.now();
 }

@@ -49,6 +49,19 @@ describe("chat portal handlers", () => {
     expect(respond).toHaveBeenCalledWith(
       true,
       expect.objectContaining({
+        drivers: expect.objectContaining({
+          defaultDriver: "native",
+          enabled: expect.arrayContaining(["native"]),
+          loaded: expect.arrayContaining(["native"]),
+          details: expect.arrayContaining([
+            expect.objectContaining({
+              driverId: "native",
+              source: "builtin",
+              enabled: true,
+              loaded: true,
+            }),
+          ]),
+        }),
         probes: {
           redis: expect.objectContaining({ configured: false, state: "skipped" }),
           s3: expect.objectContaining({ configured: false, state: "skipped" }),

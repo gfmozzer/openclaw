@@ -5,6 +5,8 @@ export type UiMode = "client" | "admin";
 
 export type Tab =
   | "agents"
+  | "drivers"
+  | "providers"
   | "overview"
   | "channels"
   | "instances"
@@ -29,7 +31,7 @@ export const TAB_GROUPS: TabGroup[] = [
     tabs: ["overview", "channels", "instances", "sessions", "usage", "cron", "docs", "faq"],
   },
   { label: "agent", tabs: ["agents", "skills", "nodes"] },
-  { label: "settings", tabs: ["config", "debug", "logs"] },
+  { label: "settings", tabs: ["drivers", "providers", "config", "debug", "logs"] },
 ];
 const CLIENT_VISIBLE_TABS = new Set<Tab>([
   "chat",
@@ -43,6 +45,8 @@ const CLIENT_VISIBLE_TABS = new Set<Tab>([
 
 const TAB_PATHS: Record<Tab, string> = {
   agents: "/agents",
+  drivers: "/drivers",
+  providers: "/providers",
   overview: "/overview",
   channels: "/channels",
   instances: "/instances",
@@ -148,6 +152,9 @@ export function iconForTab(tab: Tab): IconName {
       return "messageSquare";
     case "overview":
       return "barChart";
+    case "providers":
+    case "drivers":
+      return "plug";
     case "channels":
       return "link";
     case "instances":

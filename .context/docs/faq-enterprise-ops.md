@@ -67,3 +67,16 @@ scaffoldVersion: "2.0.0"
 ## 10) Frontend desacoplado consegue conectar em HTTPS + WS?
 - Sim, desde que o reverse proxy preserve upgrade de WebSocket e headers auth.
 - O frontend deve apontar para URL do gateway com token valido.
+
+## 11) Credencial valida mas nao aparecem modelos. O que verificar?
+- Primeiro rode `providers.credentials.test` para o `profileId`.
+- Se `ok=false` e `errorCode=NO_MODELS`, valide:
+  - provider/baseUrl correto;
+  - permissao da API key para listagem de modelos;
+  - se o provider suporta discovery live.
+- Se o provider nao suportar discovery live, o sistema usa catalogo built-in.
+
+## 12) Como fazer rollback rapido da nova UX de provider/model?
+- Backend: `OPENCLAW_PROVIDERS_RPC_ENABLED=0` desativa metodos `providers.*`.
+- Frontend: `VITE_OPENCLAW_PROVIDERS_UI_ENABLED=0` remove a aba `Providers`.
+- O fluxo legado (`/config` raw + `models.providers.*`) continua disponivel.

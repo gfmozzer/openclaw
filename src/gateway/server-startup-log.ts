@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "../agents/defaults.js";
+import { DEFAULT_DRIVER_ID, formatModelRoute, toModelRouteRef } from "../agents/model-route.js";
 import { resolveConfiguredModelRef } from "../agents/model-selection.js";
 import type { loadConfig } from "../config/config.js";
 import { getResolvedLoggerSettings } from "../logging.js";
@@ -18,9 +19,16 @@ export function logGatewayStartup(params: {
     defaultProvider: DEFAULT_PROVIDER,
     defaultModel: DEFAULT_MODEL,
   });
+  const route = toModelRouteRef({
+    driver: DEFAULT_DRIVER_ID,
+    provider: agentProvider,
+    model: agentModel,
+  });
   const modelRef = `${agentProvider}/${agentModel}`;
   params.log.info(`agent model: ${modelRef}`, {
     consoleMessage: `agent model: ${chalk.whiteBright(modelRef)}`,
+    driverId: route.driver,
+    modelRoute: formatModelRoute(route, { includeNativeDriver: true }),
   });
   const scheme = params.tlsEnabled ? "wss" : "ws";
   const formatHost = (host: string) => (host.includes(":") ? `[${host}]` : host);

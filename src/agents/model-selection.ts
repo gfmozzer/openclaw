@@ -138,6 +138,18 @@ export function parseModelRef(raw: string, defaultProvider: string): ModelRef | 
   if (!trimmed) {
     return null;
   }
+  // Forward compatibility:
+  // Accept canonical multi-driver format and collapse to legacy provider/model.
+  // Example: "litellm::openai/gpt-5.2" -> provider=openai, model=gpt-5.2
+  const explicitRoute = /^([^:\s/]+)::([^/\s]+)\/(.+)$/.exec(trimmed);
+  if (explicitRoute) {
+    const providerRaw = explicitRoute[2]?.trim();
+    const modelRaw = explicitRoute[3]?.trim();
+    if (!providerRaw || !modelRaw) {
+      return null;
+    }
+    return normalizeModelRef(providerRaw, modelRaw);
+  }
   const slash = trimmed.indexOf("/");
   if (slash === -1) {
     return normalizeModelRef(defaultProvider, trimmed);

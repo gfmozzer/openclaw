@@ -36,6 +36,40 @@ import type {
   SkillsUpdateParamsSchema,
 } from "./agents-models-skills.js";
 import type {
+  ProvidersCredentialMetaSchema,
+  DriversCredentialsListParamsSchema,
+  DriversCredentialsListResultSchema,
+  DriversCredentialsUpsertParamsSchema,
+  DriversCredentialsUpsertResultSchema,
+  DriversCredentialsDeleteParamsSchema,
+  DriversCredentialsDeleteResultSchema,
+  DriversCredentialsTestParamsSchema,
+  DriversCredentialsTestResultSchema,
+  ProvidersCredentialsDeleteParamsSchema,
+  ProvidersCredentialsDeleteResultSchema,
+  ProvidersCredentialsListParamsSchema,
+  ProvidersCredentialsListResultSchema,
+  ProvidersCredentialsTestParamsSchema,
+  ProvidersCredentialsTestResultSchema,
+  ProvidersCredentialsUpsertParamsSchema,
+  ProvidersCredentialsUpsertResultSchema,
+  DriversRegistryListParamsSchema,
+  DriversRegistryListResultSchema,
+  DriversModelsListParamsSchema,
+  DriversModelsListResultSchema,
+  DriversProvidersListParamsSchema,
+  DriversProvidersListResultSchema,
+  DriversSmokeTestParamsSchema,
+  DriversSmokeTestResultSchema,
+  ProvidersModelsListParamsSchema,
+  ProvidersModelsListResultSchema,
+  ProvidersRegistryEntrySchema,
+  ProvidersRegistryListParamsSchema,
+  ProvidersRegistryListResultSchema,
+  ProviderModelEntrySchema,
+  ProviderModelGroupSchema,
+} from "./providers.js";
+import type {
   ChannelsLogoutParamsSchema,
   TalkConfigParamsSchema,
   TalkConfigResultSchema,
@@ -214,6 +248,38 @@ export type AgentsListResult = Static<typeof AgentsListResultSchema>;
 export type ModelChoice = Static<typeof ModelChoiceSchema>;
 export type ModelsListParams = Static<typeof ModelsListParamsSchema>;
 export type ModelsListResult = Static<typeof ModelsListResultSchema>;
+export type ProvidersRegistryEntry = Static<typeof ProvidersRegistryEntrySchema>;
+export type ProvidersRegistryListParams = Static<typeof ProvidersRegistryListParamsSchema>;
+export type ProvidersRegistryListResult = Static<typeof ProvidersRegistryListResultSchema>;
+export type ProvidersCredentialMeta = Static<typeof ProvidersCredentialMetaSchema>;
+export type DriversCredentialsListParams = Static<typeof DriversCredentialsListParamsSchema>;
+export type DriversCredentialsListResult = Static<typeof DriversCredentialsListResultSchema>;
+export type DriversCredentialsUpsertParams = Static<typeof DriversCredentialsUpsertParamsSchema>;
+export type DriversCredentialsUpsertResult = Static<typeof DriversCredentialsUpsertResultSchema>;
+export type DriversCredentialsDeleteParams = Static<typeof DriversCredentialsDeleteParamsSchema>;
+export type DriversCredentialsDeleteResult = Static<typeof DriversCredentialsDeleteResultSchema>;
+export type DriversCredentialsTestParams = Static<typeof DriversCredentialsTestParamsSchema>;
+export type DriversCredentialsTestResult = Static<typeof DriversCredentialsTestResultSchema>;
+export type ProvidersCredentialsListParams = Static<typeof ProvidersCredentialsListParamsSchema>;
+export type ProvidersCredentialsListResult = Static<typeof ProvidersCredentialsListResultSchema>;
+export type ProvidersCredentialsUpsertParams = Static<typeof ProvidersCredentialsUpsertParamsSchema>;
+export type ProvidersCredentialsUpsertResult = Static<typeof ProvidersCredentialsUpsertResultSchema>;
+export type ProvidersCredentialsDeleteParams = Static<typeof ProvidersCredentialsDeleteParamsSchema>;
+export type ProvidersCredentialsDeleteResult = Static<typeof ProvidersCredentialsDeleteResultSchema>;
+export type ProvidersCredentialsTestParams = Static<typeof ProvidersCredentialsTestParamsSchema>;
+export type ProvidersCredentialsTestResult = Static<typeof ProvidersCredentialsTestResultSchema>;
+export type ProviderModelEntry = Static<typeof ProviderModelEntrySchema>;
+export type ProviderModelGroup = Static<typeof ProviderModelGroupSchema>;
+export type ProvidersModelsListParams = Static<typeof ProvidersModelsListParamsSchema>;
+export type ProvidersModelsListResult = Static<typeof ProvidersModelsListResultSchema>;
+export type DriversRegistryListParams = Static<typeof DriversRegistryListParamsSchema>;
+export type DriversRegistryListResult = Static<typeof DriversRegistryListResultSchema>;
+export type DriversModelsListParams = Static<typeof DriversModelsListParamsSchema>;
+export type DriversModelsListResult = Static<typeof DriversModelsListResultSchema>;
+export type DriversProvidersListParams = Static<typeof DriversProvidersListParamsSchema>;
+export type DriversProvidersListResult = Static<typeof DriversProvidersListResultSchema>;
+export type DriversSmokeTestParams = Static<typeof DriversSmokeTestParamsSchema>;
+export type DriversSmokeTestResult = Static<typeof DriversSmokeTestResultSchema>;
 export type SkillsStatusParams = Static<typeof SkillsStatusParamsSchema>;
 export type SkillsBinsParams = Static<typeof SkillsBinsParamsSchema>;
 export type SkillsBinsResult = Static<typeof SkillsBinsResultSchema>;

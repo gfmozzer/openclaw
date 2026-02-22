@@ -14,6 +14,7 @@ import type {
   SwarmTeamDefinition,
   SwarmWorkerForm,
 } from "../controllers/swarm.ts";
+import type { ProviderModelsGroup } from "../controllers/providers.ts";
 import {
   renderAgentFiles,
   renderAgentChannels,
@@ -26,7 +27,7 @@ import { renderAgentSwarm } from "./agents-panels-swarm.ts";
 import {
   agentBadgeText,
   buildAgentContext,
-  buildModelOptions,
+  resolveModelOptions,
   normalizeAgentLabel,
   normalizeModelValue,
   parseFallbackList,
@@ -81,6 +82,9 @@ export type AgentsProps = {
   swarmTeams: SwarmTeamDefinition[];
   swarmSelectedTeamId: string | null;
   swarmForm: SwarmFormState;
+  providersModels: ProviderModelsGroup[];
+  runtimeDriversLoaded?: string[];
+  runtimeDriversEnabled?: string[];
   onRefresh: () => void;
   onSelectAgent: (agentId: string) => void;
   onSelectPanel: (panel: AgentsPanel) => void;
@@ -208,6 +212,7 @@ export function renderAgents(props: AgentsProps) {
                         configLoading: props.configLoading,
                         configSaving: props.configSaving,
                         configDirty: props.configDirty,
+                        providersModels: props.providersModels,
                         onConfigReload: props.onConfigReload,
                         onConfigSave: props.onConfigSave,
                         onModelChange: props.onModelChange,
@@ -270,6 +275,9 @@ export function renderAgents(props: AgentsProps) {
                         selectedTeamId: props.swarmSelectedTeamId,
                         form: props.swarmForm,
                         availableAgentIds: agents.map((entry) => entry.id),
+                        runtimeDriversLoaded: props.runtimeDriversLoaded,
+                        runtimeDriversEnabled: props.runtimeDriversEnabled,
+                        providersModels: props.providersModels,
                         onRefresh: props.onSwarmRefresh,
                         onCreate: props.onSwarmCreate,
                         onSelectTeam: props.onSwarmSelectTeam,
@@ -420,6 +428,74 @@ function renderAgentTabs(active: AgentsPanel, onSelect: (panel: AgentsPanel) => 
   `;
 }
 
+type ParsedModelRoute = {
+  driverId: string | null;
+  providerId: string | null;
+  modelId: string | null;
+  raw: string;
+};
+
+function parseAgentModelRoute(rawValue: string | null | undefined): ParsedModelRoute {
+  const raw = (rawValue ?? "").trim();
+  if (!raw) {
+    return { driverId: null, providerId: null, modelId: null, raw: "" };
+  }
+  const routeMatch = raw.match(/^([^:]+)::([^/]+)\/(.+)$/);
+  if (routeMatch) {
+    return {
+      driverId: routeMatch[1]?.trim() || null,
+      providerId: routeMatch[2]?.trim() || null,
+      modelId: routeMatch[3]?.trim() || null,
+      raw,
+    };
+  }
+  const legacyMatch = raw.match(/^([^/]+)\/(.+)$/);
+  if (legacyMatch) {
+    return {
+      driverId: null,
+      providerId: legacyMatch[1]?.trim() || null,
+      modelId: legacyMatch[2]?.trim() || null,
+      raw,
+    };
+  }
+  return { driverId: null, providerId: null, modelId: raw, raw };
+}
+
+function buildAgentModelRouteIndex(providersModels: ProviderModelsGroup[]) {
+  const rows: Array<{
+    driverId: string;
+    providerId: string;
+    modelId: string;
+    value: string;
+    name: string;
+    toolMode: boolean;
+    toolContract?: Record<string, unknown>;
+  }> = [];
+  for (const group of providersModels) {
+    const providerId = group.providerId?.trim();
+    if (!providerId) continue;
+    for (const model of group.models ?? []) {
+      const modelId = model.id?.trim();
+      if (!modelId) continue;
+      const driverId = model.driverId?.trim() || "default";
+      const value = model.modelRoute?.trim() || `${providerId}/${modelId}`;
+      rows.push({
+        driverId,
+        providerId,
+        modelId,
+        value,
+        name: model.name?.trim() || modelId,
+        toolMode: Boolean(model.toolMode),
+        toolContract:
+          model.toolContract && typeof model.toolContract === "object"
+            ? (model.toolContract as Record<string, unknown>)
+            : undefined,
+      });
+    }
+  }
+  return rows;
+}
+
 function renderAgentOverview(params: {
   agent: AgentsListResult["agents"][number];
   defaultId: string | null;
@@ -431,6 +507,7 @@ function renderAgentOverview(params: {
   configLoading: boolean;
   configSaving: boolean;
   configDirty: boolean;
+  providersModels: ProviderModelsGroup[];
   onConfigReload: () => void;
   onConfigSave: () => void;
   onModelChange: (agentId: string, modelId: string | null) => void;
@@ -446,6 +523,7 @@ function renderAgentOverview(params: {
     configLoading,
     configSaving,
     configDirty,
+    providersModels,
     onConfigReload,
     onConfigSave,
     onModelChange,
@@ -468,6 +546,42 @@ function renderAgentOverview(params: {
   const effectivePrimary = modelPrimary ?? defaultPrimary ?? null;
   const modelFallbacks = resolveModelFallbacks(config.entry?.model);
   const fallbackText = modelFallbacks ? modelFallbacks.join(", ") : "";
+  const modelOptions = resolveModelOptions(configForm, providersModels, effectivePrimary ?? undefined);
+  const routeRows = buildAgentModelRouteIndex(providersModels);
+  const parsedCurrent = parseAgentModelRoute(effectivePrimary);
+  const driverOptions = Array.from(new Set(routeRows.map((row) => row.driverId))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const selectedDriverFromCurrent =
+    parsedCurrent.driverId && routeRows.some((row) => row.driverId === parsedCurrent.driverId)
+      ? parsedCurrent.driverId
+      : driverOptions[0] ?? null;
+  const providerOptions = Array.from(
+    new Set(
+      routeRows
+        .filter((row) => !selectedDriverFromCurrent || row.driverId === selectedDriverFromCurrent)
+        .map((row) => row.providerId),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+  const selectedProviderFromCurrent =
+    parsedCurrent.providerId && providerOptions.includes(parsedCurrent.providerId)
+      ? parsedCurrent.providerId
+      : providerOptions[0] ?? null;
+  const modelRows = routeRows.filter(
+    (row) =>
+      (!selectedDriverFromCurrent || row.driverId === selectedDriverFromCurrent) &&
+      (!selectedProviderFromCurrent || row.providerId === selectedProviderFromCurrent),
+  );
+  const selectedModelRow =
+    routeRows.find((row) => row.value === effectivePrimary) ??
+    routeRows.find(
+      (row) =>
+        row.driverId === selectedDriverFromCurrent &&
+        row.providerId === selectedProviderFromCurrent &&
+        row.modelId === parsedCurrent.modelId,
+    ) ??
+    null;
+  const modelSuggestionsId = `agent-model-suggestions-${agent.id}`;
   const identityName =
     agentIdentity?.name?.trim() ||
     agent.identity?.name?.trim() ||
@@ -523,26 +637,102 @@ function renderAgentOverview(params: {
 
       <div class="agent-model-select" style="margin-top: 20px;">
         <div class="label">Model Selection</div>
+        <div class="row" style="gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
+          <label class="field" style="min-width: 180px; flex: 1;">
+            <span>Driver</span>
+            <select
+              .value=${selectedDriverFromCurrent ?? ""}
+              ?disabled=${!configForm || configLoading || configSaving || driverOptions.length === 0}
+              @change=${(e: Event) => {
+                const nextDriver = (e.target as HTMLSelectElement).value.trim();
+                const nextProvider = routeRows.find((row) => row.driverId === nextDriver)?.providerId ?? "";
+                const nextModel = routeRows.find(
+                  (row) => row.driverId === nextDriver && row.providerId === nextProvider,
+                );
+                onModelChange(agent.id, nextModel?.value ?? null);
+              }}
+            >
+              ${driverOptions.length === 0
+                ? html`<option value="">No drivers in catalog</option>`
+                : driverOptions.map((driverId) => html`<option value=${driverId}>${driverId}</option>`)}
+            </select>
+          </label>
+          <label class="field" style="min-width: 220px; flex: 1;">
+            <span>Provider</span>
+            <select
+              .value=${selectedProviderFromCurrent ?? ""}
+              ?disabled=${!configForm || configLoading || configSaving || providerOptions.length === 0}
+              @change=${(e: Event) => {
+                const nextProvider = (e.target as HTMLSelectElement).value.trim();
+                const nextModel = routeRows.find(
+                  (row) =>
+                    row.driverId === selectedDriverFromCurrent &&
+                    row.providerId === nextProvider,
+                );
+                onModelChange(agent.id, nextModel?.value ?? null);
+              }}
+            >
+              ${providerOptions.length === 0
+                ? html`<option value="">No providers</option>`
+                : providerOptions.map((providerId) => html`<option value=${providerId}>${providerId}</option>`)}
+            </select>
+          </label>
+          <label class="field" style="min-width: 320px; flex: 2;">
+            <span>Model route</span>
+            <select
+              .value=${selectedModelRow?.value ?? effectivePrimary ?? ""}
+              ?disabled=${!configForm || configLoading || configSaving || modelRows.length === 0}
+              @change=${(e: Event) => {
+                const value = (e.target as HTMLSelectElement).value.trim();
+                onModelChange(agent.id, value || null);
+              }}
+            >
+              ${modelRows.length === 0
+                ? html`<option value="">No models for selection</option>`
+                : modelRows.map(
+                    (row) =>
+                      html`<option value=${row.value}>
+                        ${row.name} (${row.modelId})${row.toolMode ? " [tool]" : ""}
+                      </option>`,
+                  )}
+            </select>
+          </label>
+        </div>
         <div class="row" style="gap: 12px; flex-wrap: wrap;">
           <label class="field" style="min-width: 260px; flex: 1;">
-            <span>Primary model${isDefault ? " (default)" : ""}</span>
-            <select
+            <span>Primary model${isDefault ? " (default)" : ""} (searchable)</span>
+            <input
+              type="text"
+              list=${modelSuggestionsId}
               .value=${effectivePrimary ?? ""}
               ?disabled=${!configForm || configLoading || configSaving}
-              @change=${(e: Event) =>
-                onModelChange(agent.id, (e.target as HTMLSelectElement).value || null)}
-            >
-              ${
-                isDefault
-                  ? nothing
-                  : html`
-                      <option value="">
-                        ${defaultPrimary ? `Inherit default (${defaultPrimary})` : "Inherit default"}
-                      </option>
-                    `
-              }
-              ${buildModelOptions(configForm, effectivePrimary ?? undefined)}
-            </select>
+              placeholder=${defaultPrimary && !isDefault
+                ? `Inherit default (${defaultPrimary})`
+                : "provider/model"}
+              @change=${(e: Event) => {
+                const value = (e.target as HTMLInputElement).value.trim();
+                onModelChange(agent.id, value || null);
+              }}
+            />
+            <datalist id=${modelSuggestionsId}>
+              ${modelOptions.map((option) => html`<option value=${option.value}>${option.label}</option>`)}
+            </datalist>
+            ${
+              !isDefault
+                ? html`
+                    <div class="row" style="justify-content: flex-start; margin-top: 6px;">
+                      <button
+                        class="btn btn--sm"
+                        type="button"
+                        ?disabled=${!configForm || configLoading || configSaving}
+                        @click=${() => onModelChange(agent.id, null)}
+                      >
+                        Inherit default
+                      </button>
+                    </div>
+                  `
+                : nothing
+            }
           </label>
           <label class="field" style="min-width: 260px; flex: 1;">
             <span>Fallbacks (comma-separated)</span>
@@ -558,6 +748,33 @@ function renderAgentOverview(params: {
             />
           </label>
         </div>
+        ${
+          selectedModelRow
+            ? html`
+                <div class="callout" style="margin-top: 10px;">
+                  <div class="row" style="gap: 8px; flex-wrap: wrap;">
+                    <span class="chip">driver: ${selectedModelRow.driverId}</span>
+                    <span class="chip">provider: ${selectedModelRow.providerId}</span>
+                    <span class="chip">model: ${selectedModelRow.modelId}</span>
+                    <span class="chip">${selectedModelRow.toolMode ? "tool mode" : "agent mode"}</span>
+                  </div>
+                  <div style="margin-top: 8px;">
+                    Tool Mode é metadata da rota de modelo (API/ferramenta), não papel de agente/container.
+                  </div>
+                  ${
+                    selectedModelRow.toolContract
+                      ? html`
+                          <details style="margin-top: 8px;">
+                            <summary class="mono">toolContract (preview)</summary>
+                            <pre class="mono" style="white-space: pre-wrap; margin-top: 8px;">${JSON.stringify(selectedModelRow.toolContract, null, 2)}</pre>
+                          </details>
+                        `
+                      : nothing
+                  }
+                </div>
+              `
+            : nothing
+        }
         <div class="row" style="justify-content: flex-end; gap: 8px;">
           <button class="btn btn--sm" ?disabled=${configLoading} @click=${onConfigReload}>
             Reload Config

@@ -5,6 +5,17 @@ import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
 import type {
+  ProviderCredentialType,
+  ProviderModelsGroup,
+  ProviderRegistryEntry,
+} from "./controllers/providers.ts";
+import type {
+  DriverModelsGroup,
+  DriverProvidersGroup,
+  DriverRegistryEntry,
+  DriverSmokeResult,
+} from "./controllers/drivers.ts";
+import type {
   SwarmFormState,
   SwarmTeamDefinition,
 } from "./controllers/swarm.ts";
@@ -143,6 +154,33 @@ export type AppViewState = {
   agentsError: string | null;
   agentsSelectedId: string | null;
   agentsPanel: "overview" | "files" | "memory" | "metrics" | "tools" | "skills" | "channels" | "cron" | "swarm";
+  providersLoading: boolean;
+  providersSaving: boolean;
+  providersTesting: boolean;
+  providersError: string | null;
+  providersNotice: string | null;
+  providersRegistry: ProviderRegistryEntry[];
+  providersModels: ProviderModelsGroup[];
+  providersSelectedId: string | null;
+  providerCredentialDrafts: Record<string, string>;
+  providerCredentialTypes: Record<string, ProviderCredentialType>;
+  providerCredentialProfiles: Record<string, string>;
+  providerTestResults: Record<string, { ok: boolean; message: string }>;
+  driversUiLoading: boolean;
+  driversUiSaving: boolean;
+  driversUiTesting: boolean;
+  driversUiError: string | null;
+  driversUiNotice: string | null;
+  driversRegistryRows: DriverRegistryEntry[];
+  driversProviderMatrix: DriverProvidersGroup[];
+  driversModelsTree: DriverModelsGroup[];
+  driversSelectedId: string | null;
+  driversSelectedProviderByDriver: Record<string, string>;
+  driversCredentialDrafts: Record<string, string>;
+  driversCredentialTypes: Record<string, ProviderCredentialType>;
+  driversCredentialProfiles: Record<string, string>;
+  driversCredentialSmokeResults: Record<string, DriverSmokeResult>;
+  driversRouteSmokeResults: Record<string, DriverSmokeResult>;
   agentFilesLoading: boolean;
   agentFilesError: string | null;
   agentFilesList: AgentsFilesListResult | null;

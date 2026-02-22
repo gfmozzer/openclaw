@@ -1,11 +1,19 @@
 import { type OpenClawConfig, loadConfig } from "../config/config.js";
+import { DEFAULT_DRIVER_ID, formatModelRoute } from "./model-route.js";
 import { resolveOpenClawAgentDir } from "./agent-paths.js";
 import { ensureOpenClawModelsJson } from "./models-config.js";
+import { buildDriverSeedModels } from "./driver-seed-models.js";
+
+export type ModelToolContract = Record<string, unknown>;
 
 export type ModelCatalogEntry = {
   id: string;
   name: string;
   provider: string;
+  driverId?: string;
+  modelRoute?: string;
+  toolMode?: boolean;
+  toolContract?: ModelToolContract;
   contextWindow?: number;
   reasoning?: boolean;
   input?: Array<"text" | "image">;
@@ -30,6 +38,54 @@ let importPiSdk = defaultImportPiSdk;
 const CODEX_PROVIDER = "openai-codex";
 const OPENAI_CODEX_GPT53_MODEL_ID = "gpt-5.3-codex";
 const OPENAI_CODEX_GPT53_SPARK_MODEL_ID = "gpt-5.3-codex-spark";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function resolveModelToolMetadata(params: {
+  cfg: OpenClawConfig;
+  provider: string;
+  modelId: string;
+}): { toolMode?: boolean; toolContract?: ModelToolContract } {
+  const providerConfig = params.cfg.models?.providers?.[params.provider];
+  const providerModels = Array.isArray(providerConfig?.models) ? providerConfig.models : [];
+  if (providerModels.length === 0) {
+    return {};
+  }
+  const normalizedModelId = params.modelId.trim().toLowerCase();
+  const legacyRoute = `${params.provider}/${params.modelId}`.toLowerCase();
+  const canonicalRoute = formatModelRoute(
+    {
+      driver: DEFAULT_DRIVER_ID,
+      provider: params.provider,
+      model: params.modelId,
+    },
+    { includeNativeDriver: true },
+  ).toLowerCase();
+  const modelEntry = providerModels.find((entry) => {
+    if (!entry || typeof entry !== "object") {
+      return false;
+    }
+    const rawId = "id" in entry ? String((entry as { id?: unknown }).id ?? "").trim().toLowerCase() : "";
+    if (!rawId) {
+      return false;
+    }
+    return rawId === normalizedModelId || rawId === legacyRoute || rawId === canonicalRoute;
+  });
+  if (!modelEntry || typeof modelEntry !== "object") {
+    return {};
+  }
+
+  const raw = modelEntry as { toolMode?: unknown; toolContract?: unknown };
+  const contract = isRecord(raw.toolContract) ? raw.toolContract : undefined;
+  const explicitToolMode = typeof raw.toolMode === "boolean" ? raw.toolMode : undefined;
+  const toolMode = explicitToolMode ?? (contract ? true : undefined);
+  return {
+    ...(toolMode !== undefined ? { toolMode } : {}),
+    ...(contract ? { toolContract: contract } : {}),
+  };
+}
 
 function applyOpenAICodexSparkFallback(models: ModelCatalogEntry[]): void {
   const hasSpark = models.some(
@@ -137,7 +193,39 @@ export async function loadModelCatalog(params?: {
             : undefined;
         const reasoning = typeof entry?.reasoning === "boolean" ? entry.reasoning : undefined;
         const input = Array.isArray(entry?.input) ? entry.input : undefined;
-        models.push({ id, name, provider, contextWindow, reasoning, input });
+        const toolMetadata = resolveModelToolMetadata({
+          cfg,
+          provider,
+          modelId: id,
+        });
+        const catalogEntry: ModelCatalogEntry = {
+          id,
+          name,
+          provider,
+          driverId: DEFAULT_DRIVER_ID,
+          modelRoute: formatModelRoute(
+            { driver: DEFAULT_DRIVER_ID, provider, model: id },
+            { includeNativeDriver: true },
+          ),
+          ...(toolMetadata.toolMode !== undefined ? { toolMode: toolMetadata.toolMode } : {}),
+          ...(toolMetadata.toolContract ? { toolContract: toolMetadata.toolContract } : {}),
+          ...(contextWindow !== undefined ? { contextWindow } : {}),
+          ...(reasoning !== undefined ? { reasoning } : {}),
+          ...(input !== undefined ? { input } : {}),
+        };
+        models.push(catalogEntry);
+      }
+      for (const seeded of buildDriverSeedModels(process.env)) {
+        const exists = models.some(
+          (entry) =>
+            entry.provider.toLowerCase() === seeded.provider.toLowerCase() &&
+            entry.id.toLowerCase() === seeded.id.toLowerCase() &&
+            (entry.driverId ?? DEFAULT_DRIVER_ID).toLowerCase() ===
+              (seeded.driverId ?? DEFAULT_DRIVER_ID).toLowerCase(),
+        );
+        if (!exists) {
+          models.push(seeded);
+        }
       }
       applyOpenAICodexSparkFallback(models);
 

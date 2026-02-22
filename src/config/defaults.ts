@@ -3,6 +3,7 @@ import { parseModelRef } from "../agents/model-selection.js";
 import { DEFAULT_AGENT_MAX_CONCURRENT, DEFAULT_SUBAGENT_MAX_CONCURRENT } from "./agent-limits.js";
 import { resolveTalkApiKey } from "./talk.js";
 import type { OpenClawConfig } from "./types.js";
+import type { AgentModelEntryConfig } from "./types.agent-defaults.js";
 import type { ModelDefinitionConfig } from "./types.models.js";
 
 type WarnState = { warned: boolean };
@@ -262,7 +263,7 @@ export function applyModelDefaults(cfg: OpenClawConfig): OpenClawConfig {
     return mutated ? nextCfg : cfg;
   }
 
-  const nextModels: Record<string, { alias?: string }> = {
+  const nextModels: Record<string, AgentModelEntryConfig> = {
     ...existingModels,
   };
 

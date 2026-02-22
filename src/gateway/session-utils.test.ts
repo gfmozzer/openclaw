@@ -12,6 +12,7 @@ import {
   parseGroupKey,
   pruneLegacyStoreKeys,
   resolveGatewaySessionStoreTarget,
+  resolveSessionModelRoute,
   resolveSessionModelRef,
   resolveSessionStoreKey,
 } from "./session-utils.js";
@@ -257,6 +258,57 @@ describe("resolveSessionModelRef", () => {
     });
 
     expect(resolved).toEqual({ provider: "openai-codex", model: "gpt-5.3-codex" });
+  });
+});
+
+describe("resolveSessionModelRoute", () => {
+  test("parses explicit driver route from runtime model", () => {
+    const cfg = {
+      agents: {
+        defaults: {
+          model: { primary: "anthropic/claude-opus-4-6" },
+        },
+      },
+    } as OpenClawConfig;
+    const resolved = resolveSessionModelRoute({
+      cfg,
+      entry: {
+        sessionId: "s3",
+        updatedAt: Date.now(),
+        model: "litellm::openai/gpt-5.2",
+      },
+    });
+    expect(resolved).toEqual({
+      driver: "litellm",
+      provider: "openai",
+      model: "gpt-5.2",
+      route: "litellm::openai/gpt-5.2",
+    });
+  });
+
+  test("falls back to native route for legacy entries", () => {
+    const cfg = {
+      agents: {
+        defaults: {
+          model: { primary: "openai/gpt-5.2" },
+        },
+      },
+    } as OpenClawConfig;
+    const resolved = resolveSessionModelRoute({
+      cfg,
+      entry: {
+        sessionId: "s4",
+        updatedAt: Date.now(),
+        modelProvider: "anthropic",
+        model: "claude-opus-4-6",
+      },
+    });
+    expect(resolved).toEqual({
+      driver: "native",
+      provider: "anthropic",
+      model: "claude-opus-4-6",
+      route: "anthropic/claude-opus-4-6",
+    });
   });
 });
 

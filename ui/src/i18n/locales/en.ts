@@ -32,6 +32,8 @@ export const en: TranslationMap = {
   },
   tabs: {
     agents: "Agents",
+    drivers: "Drivers",
+    providers: "Providers",
     overview: "Overview",
     channels: "Channels",
     instances: "Instances",
@@ -50,6 +52,8 @@ export const en: TranslationMap = {
   },
   subtitles: {
     agents: "Manage agent workspaces, tools, and identities.",
+    drivers: "Driver runtime diagnostics and integration health for this instance.",
+    providers: "Manage provider credentials and model availability.",
     overview: "Gateway status, entry points, and a fast health read.",
     channels: "Manage channels and settings.",
     instances: "Presence beacons from connected clients and nodes.",

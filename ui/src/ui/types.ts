@@ -506,6 +506,21 @@ export type PortalStackProbe = {
 
 export type PortalStackStatus = {
   statelessBackend: string;
+  drivers?: {
+    defaultDriver?: string;
+    enabled?: string[];
+    loaded?: string[];
+    failed?: Array<{ driverId: string; reason?: string }>;
+    details?: Array<{
+      driverId: string;
+      enabled: boolean;
+      loaded: boolean;
+      source: "builtin" | "external";
+      entry?: string;
+      package?: string;
+      reason?: string;
+    }>;
+  };
   probes: {
     redis: PortalStackProbe;
     s3: PortalStackProbe;
